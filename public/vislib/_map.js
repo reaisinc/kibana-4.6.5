@@ -1,4 +1,4 @@
-import {markerIcon} from 'plugins/enhanced_tilemap/vislib/markerIcon';
+import { markerIcon } from 'plugins/enhanced_tilemap/vislib/markerIcon';
 
 define(function (require) {
   return function MapFactory(Private) {
@@ -14,8 +14,10 @@ define(function (require) {
     require('./../lib/leaflet.setview/L.Control.SetView');
     require('./../lib/leaflet.measurescale/L.Control.MeasureScale.css');
     require('./../lib/leaflet.measurescale/L.Control.MeasureScale');
+    //add ESRI sah
+    require('./../lib/leaflet.esri/esri-leaflet');
     var syncMaps = require('./sync_maps');
-  
+
     var defaultMapZoom = 2;
     var defaultMapCenter = [15, 5];
     var defaultMarkerType = 'Scaled Circle Markers';
@@ -32,6 +34,9 @@ define(function (require) {
       'Shaded Geohash Grid': Private(require('./marker_types/geohash_grid')),
       'Heatmap': Private(require('./marker_types/heatmap')),
     };
+    //default ESRI basemap - added sah 
+    var esriBasemap = "Streets";
+    var bufferDistance="2km";
 
     /**
      * Tile Map Maps
@@ -54,7 +59,8 @@ define(function (require) {
       this._mapZoom = _.get(params, 'zoom') || defaultMapZoom;
       this._setAttr(params.attr);
       this._isEditable = params.editable || false;
-
+      this._esriBasemap =  params.esriBasemap;
+      this._bufferDistance = "2km";
       var mapOptions = {
         minZoom: 1,
         maxZoom: 18,
@@ -62,6 +68,7 @@ define(function (require) {
         maxBounds: L.latLngBounds([-90, -220], [90, 220]),
         scrollWheelZoom: _.get(params.attr, 'scrollWheelZoom', true),
         fadeAnimation: false,
+        esriBasemap: params.esriBasemap,
       };
 
       this._createMap(mapOptions);
@@ -73,15 +80,15 @@ define(function (require) {
       //create Markers feature group and add saved markers 
       this._drawnItems = new L.FeatureGroup();
       var self = this;
-      this._attr.markers.forEach(function(point) {
+      this._attr.markers.forEach(function (point) {
         let color = 'green';
         if (point.length === 3) {
           color = point.pop();
         }
         self._drawnItems.addLayer(
           L.marker(
-            point, 
-            {icon: markerIcon(color)}));
+            point,
+            { icon: markerIcon(color) }));
       });
       this.map.addLayer(this._drawnItems);
       this._layerControl.addOverlay(this._drawnItems, "Markers");
@@ -105,10 +112,10 @@ define(function (require) {
         edit: {
           featureGroup: this._drawnItems,
           edit: false
-        } 
+        }
       }
       //Do not show marker and remove buttons when visualization is displayed in dashboard, i.e. not editable 
-      if(!this._isEditable) {
+      if (!this._isEditable) {
         drawOptions.draw.marker = false;
         drawOptions.edit.remove = false;
       }
@@ -129,7 +136,7 @@ define(function (require) {
     TileMapMap.prototype._addMousePositionControl = function () {
       if (this._mousePositionControl) return;
 
-      const dd = function(val) {
+      const dd = function (val) {
         return L.Util.formatNum(val, 5);
       }
       const space = "replaceMe";
@@ -137,7 +144,7 @@ define(function (require) {
         emptyString: '',
         lngFormatters: [
           dd,
-          function(lon) {
+          function (lon) {
             var dms = formatcoords(0, lon).format('DD MM ss X', {
               latLonSeparator: space,
               decimalPlaces: 2
@@ -147,8 +154,8 @@ define(function (require) {
         ],
         latFormatters: [
           dd,
-          function(lat) {
-            var dms = formatcoords(lat,0).format('DD MM ss X', {
+          function (lat) {
+            var dms = formatcoords(lat, 0).format('DD MM ss X', {
               latLonSeparator: space,
               decimalPlaces: 2
             });
@@ -216,7 +223,7 @@ define(function (require) {
 
     TileMapMap.prototype.clearPOILayers = function () {
       const self = this;
-      Object.keys(this._poiLayers).forEach(function(key) {
+      Object.keys(this._poiLayers).forEach(function (key) {
         const layer = self._poiLayers[key];
         self._layerControl.removeLayer(layer);
         self.map.removeLayer(layer);
@@ -233,7 +240,7 @@ define(function (require) {
         this.map.removeLayer(layer);
         delete this._poiLayers[layerName];
       }
-      
+
       this.map.addLayer(layer);
       this._layerControl.addOverlay(layer, layerName);
       this._poiLayers[layerName] = layer;
@@ -258,7 +265,7 @@ define(function (require) {
       this._chartData = chartData;
       this._geoJson = _.get(chartData, 'geoJson');
       this._collar = collar;
-      
+
       let visible = true;
       if (this._markers) {
         visible = this._markers.isVisible();
@@ -271,7 +278,7 @@ define(function (require) {
         visible: visible,
         attr: this._attr
       });
-      
+
       if (this._geoJson.features.length > 1) {
         this._markers.addLegend();
       }
@@ -283,7 +290,7 @@ define(function (require) {
      */
     TileMapMap.prototype.addFilters = function (filters) {
       let isVisible = false;
-      if(this._filters) {
+      if (this._filters) {
         if (this.map.hasLayer(this._filters)) {
           isVisible = true;
         }
@@ -306,7 +313,7 @@ define(function (require) {
 
     TileMapMap.prototype.clearWMSOverlays = function () {
       const self = this;
-      this._wmsOverlays.forEach(function(layer) {
+      this._wmsOverlays.forEach(function (layer) {
         self._layerControl.removeLayer(layer);
         self.map.removeLayer(layer);
       });
@@ -320,20 +327,54 @@ define(function (require) {
       this._wmsOverlays.push(overlay);
       $(overlay.getContainer()).addClass('no-filter');
     };
+    //added sah
+    TileMapMap.prototype.setBasemap = function (name) {
+      //Use ESRI street layer
+      //if is hasn't changed, return
+      if (typeof (esriBasemap) == "undefined" || esriBasemap == name) return;
+      //save basemap name
+      esriBasemap = name;
+      //remove if exists
+      if (this._tileLayer) {
+        this.map.removeLayer(this._tileLayer);
+      }
+      //create new basemap layer
+      this._tileLayer = L.esri.basemapLayer(name); //Topographic");
+
+      this.map.addLayer(this._tileLayer);
+      //add labels?
+      /*
+      if (basemap === 'ShadedRelief'
+        || basemap === 'Oceans'
+        || basemap === 'Gray'
+        || basemap === 'DarkGray'
+        || basemap === 'Imagery'
+        || basemap === 'Terrain'
+      ) {
+      layerLabels = L.esri.basemapLayer(basemap + 'Labels');
+       map.addLayer(layerLabels);      
+      }
+      */
+    };
+    //added sah
+    TileMapMap.prototype.setBufferDistance = function (dist) {
+      this.map.bufferDistance=dist;
+    };
+
 
     TileMapMap.prototype.mapBounds = function () {
       let bounds = this.map.getBounds();
-      
+
       //When map is not visible, there is no width or height. 
       //Need to manually create bounds based on container width/height
-      if(bounds.getNorthWest().equals(bounds.getSouthEast())) {
+      if (bounds.getNorthWest().equals(bounds.getSouthEast())) {
         let parent = this._container.parentNode;
-        while(parent.clientWidth === 0 && parent.clientHeight === 0) {
+        while (parent.clientWidth === 0 && parent.clientHeight === 0) {
           parent = parent.parentNode;
         }
-        
-        const southWest = this.map.layerPointToLatLng(L.point(parent.clientWidth/2 * -1, parent.clientHeight/2 * -1));
-        const northEast = this.map.layerPointToLatLng(L.point(parent.clientWidth/2, parent.clientHeight/2));
+
+        const southWest = this.map.layerPointToLatLng(L.point(parent.clientWidth / 2 * -1, parent.clientHeight / 2 * -1));
+        const northEast = this.map.layerPointToLatLng(L.point(parent.clientWidth / 2, parent.clientHeight / 2));
         bounds = L.latLngBounds(southWest, northEast);
       }
       return bounds;
@@ -370,8 +411,8 @@ define(function (require) {
       }
 
       //update map options based on new attributes
-      if(this.map) {
-        if(this._attr.scrollWheelZoom) {
+      if (this.map) {
+        if (this._attr.scrollWheelZoom) {
           this.map.scrollWheelZoom.enable();
         } else {
           this.map.scrollWheelZoom.disable();
@@ -381,7 +422,7 @@ define(function (require) {
 
     TileMapMap.prototype._attachEvents = function () {
       var self = this;
-      
+
       this.map.on('moveend', _.debounce(function setZoomCenter(ev) {
         if (!self.map) return;
         if (self._hasSameLocation()) return;
@@ -399,6 +440,18 @@ define(function (require) {
           zoom: self._mapZoom,
         });
       }, 150, false));
+
+      //added sah
+      this.map.on('setfilter:mouseClick', function (e) {
+            var bounds =  _.get(e, 'bounds')
+            self._callbacks.rectangle({
+              e: e,
+              chart: self._chartData,
+              params: self._attr,
+              bounds: bounds
+            });
+              //bounds: utils.scaleBounds(e.layer.getBounds(), 1)
+      });
 
       this.map.on('setview:fitBounds', function (e) {
         self._fitBounds();
@@ -428,7 +481,7 @@ define(function (require) {
             break;
           case "polygon":
             const points = [];
-            e.layer._latlngs.forEach(function(latlng){
+            e.layer._latlngs.forEach(function (latlng) {
               const lat = L.Util.formatNum(latlng.lat, 5);
               const lon = L.Util.formatNum(latlng.lng, 5);
               points.push([lon, lat]);
@@ -470,13 +523,13 @@ define(function (require) {
         });
       }, 150, false));
 
-      this.map.on('overlayadd', function(e) {
+      this.map.on('overlayadd', function (e) {
         if (self._markers && e.name === "Aggregation") {
           self._markers.show();
         }
       });
 
-      this.map.on('overlayremove', function(e) {
+      this.map.on('overlayremove', function (e) {
         if (self._markers && e.name === "Aggregation") {
           self._markers.hide();
         }
@@ -489,8 +542,8 @@ define(function (require) {
       const newLat = this.map.getCenter().lat.toFixed(5);
       const newLon = this.map.getCenter().lng.toFixed(5);
       let isSame = false;
-      if (oldLat === newLat 
-        && oldLon === newLon 
+      if (oldLat === newLat
+        && oldLon === newLon
         && this.map.getZoom() === this._mapZoom) {
         isSame = true;
       }
@@ -500,11 +553,15 @@ define(function (require) {
     TileMapMap.prototype._createMap = function (mapOptions) {
       if (this.map) this.destroy();
 
+      //use ESRI map.  added sah
       // add map tiles layer, using the mapTiles object settings
       if (this._attr.wms && this._attr.wms.enabled) {
         this._tileLayer = L.tileLayer.wms(this._attr.wms.url, this._attr.wms.options);
       } else {
-        this._tileLayer = L.tileLayer(mapTiles.url, mapTiles.options);
+        //this._tileLayer = L.tileLayer(mapTiles.url, mapTiles.options);
+        //sah
+        //Use ESRI street layer
+        this._tileLayer = L.esri.basemapLayer(mapOptions.esriBasemap);
       }
 
       // append tile layers, center and zoom to the map options
@@ -513,9 +570,12 @@ define(function (require) {
       mapOptions.zoom = this._mapZoom;
 
       this.map = L.map(this._container, mapOptions);
+      // Don't show the 'Powered by Leaflet' text.
+      this.map.attributionControl.setPrefix('');
+
       this._layerControl = L.control.layers();
       this._layerControl.addTo(this.map);
-      
+
       this._addSetViewControl();
       this._addDrawControl();
       this._addMousePositionControl();
@@ -533,7 +593,7 @@ define(function (require) {
      */
     TileMapMap.prototype._fitBounds = function () {
       var bounds = this._getDataRectangles();
-      if(bounds.length > 0) {
+      if (bounds.length > 0) {
         this.map.fitBounds(bounds);
       }
     };

@@ -42,6 +42,8 @@ define(function (require) {
           mapZoom: 2,
           mapCenter: [15, 5],
           markers: [],
+          esriService: "Street",//added sah
+          buffer:"0.5km", //added sah
           overlays: {
             savedSearches: [],
             wmsOverlays: []
@@ -49,6 +51,8 @@ define(function (require) {
           wms: config.get('visualization:tileMap:WMSdefaults')
         },
         mapTypes: ['Scaled Circle Markers', 'Shaded Circle Markers', 'Shaded Geohash Grid', 'Heatmap'],
+        //added sah
+        esriServices: ["Streets", "Topographic", "Oceans", "OceansLabels", "NationalGeographic", "Gray", "GrayLabels", "DarkGray", "DarkGrayLabels", "Imagery", "ImageryLabels", "ImageryTransportation", "ShadedRelief", "ShadedReliefLabels", "Terrain","TerrainLabels"],
         scaleTypes: ['Dynamic - Linear', 'Dynamic - Uneven', 'Static'],
         canDesaturate: !!supports.cssFilters,
         editor: require('plugins/enhanced_tilemap/options.html')

@@ -185,6 +185,27 @@
         <kbn-info info="Reduce the vibrancy of tile colors, this does not work in any version of Internet Explorer"></kbn-info>
       </label>
     </div>
+
+    
+    <div class="vis-option-item form-group">     
+      <label>
+          Select the ESRI Basemap
+          <kbn-info info="Change the source for the ESRI Basemap tiled layer"></kbn-info>
+      </label>
+      <select name="esriService"
+        class="form-control"
+        ng-model="vis.params.esriService"
+        ng-options="service as service for service in vis.type.params.esriServices">
+      </select>
+      <label>
+          Buffer distance in kilometers for map queries
+          <kbn-info info="Specify the distance to search around a marker point clicked on the map.  Example: 2km"></kbn-info>
+      </label>
+      <input type="text" class="form-control"
+          name="buffer"
+          ng-model="vis.params.buffer">    
+    </div>
+
     <div class="vis-option-item form-group">
       <label>
         <input type="checkbox"
@@ -196,6 +217,8 @@
         <kbn-info info="Use WMS compliant map tile server. For advanced users only."></kbn-info>
       </label>
     </div>
+
+
     <div ng-show="vis.params.wms.enabled" class="well">
       <div class="vis-option-item form-group">     
         <p>

@@ -120,6 +120,11 @@ define(function (require) {
     $scope.$watch('vis.params', function (visParams) {
       map.saturateTiles(visParams.isDesaturated);
       map.clearPOILayers();
+      //added sah
+      map.setBasemap(visParams.esriService);
+      //added sah
+      map.setBufferDistance(visParams.buffer);
+
       $scope.vis.params.overlays.savedSearches.forEach(function (layerParams) {
         initPOILayer(layerParams);
       });
@@ -249,6 +254,7 @@ define(function (require) {
         zoom: initialMapState.zoom,
         callbacks: callbacks,
         mapType: params.mapType,
+        esriBasemap: params.esriService,
         attr: params,
         editable: $scope.vis.getEditableVis() ? true : false
       });

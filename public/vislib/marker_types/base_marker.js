@@ -46,7 +46,7 @@ define(function (require) {
       let self = this;
 
       // create the legend control, keep a reference
-      self._legend = L.control({position: 'bottomright'});
+      self._legend = L.control({ position: 'bottomright' });
 
       self._legend.onAdd = function () {
         // creates all the neccessary DOM elements for the control, adds listeners
@@ -55,9 +55,9 @@ define(function (require) {
 
         _.each(self._legendColors, function (color, i) {
           let labelText = self._legendQuantizer
-          .invertExtent(color)
-          .map(self._valueFormatter)
-          .join(' – ');
+            .invertExtent(color)
+            .map(self._valueFormatter)
+            .join(' – ');
 
           let label = $('<div>').text(labelText);
 
@@ -85,7 +85,7 @@ define(function (require) {
      */
     BaseMarker.prototype.applyShadingStyle = function (value) {
       let color = this._legendQuantizer(value);
-      if(color == undefined && 'Dynamic - Uneven' === this._attr.scaleType) {
+      if (color == undefined && 'Dynamic - Uneven' === this._attr.scaleType) {
         // Because this scale is threshold based and we added just as many ranges
         // as we did for the domain the max value is counted as being outside the
         // range so we get undefined.  We want to count this as part of the last domain.
@@ -103,7 +103,8 @@ define(function (require) {
 
     /**
      * Binds popup and events to each feature on map
-     *
+     * Rewritten by sah
+     * 
      * @method bindPopup
      * @param feature {Object}
      * @param layer {Object}
@@ -113,21 +114,111 @@ define(function (require) {
       let self = this;
 
       let popup = layer.on({
-        mouseover: function (e) {
+        //right mouse click
+        contextmenu: function (e) {
           let layer = e.target;
           // bring layer to front if not older browser
           if (!L.Browser.ie && !L.Browser.opera) {
             layer.bringToFront();
           }
-          self._showTooltip(feature);
+          let lat = _.get(feature, 'geometry.coordinates.1');
+          let lng = _.get(feature, 'geometry.coordinates.0');
+          //var latLng = L.latLng(lat, lng);
+          var sizeInMeters = this._map.bufferDistance ? parseFloat(this._map.bufferDistance) * 1000 : 2 * 1000;
+
+          // @method toBounds(sizeInMeters: Number): LatLngBounds
+          // Returns a new `LatLngBounds` object in which each boundary is `sizeInMeters/2` meters apart from the `LatLng`.
+          var latAccuracy = 180 * sizeInMeters / 40075017,
+            lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * lat);
+
+          var bounds = {
+            "top_left": { lat: lat + latAccuracy, lon: lng - lngAccuracy },
+            "bottom_right": { lat: lat - latAccuracy, lon: lng + lngAccuracy }
+          }
+          this._map.fire('setfilter:mouseClick', { bounds: bounds });
         },
-        mouseout: function (e) {
-          self._hidePopup();
+        click: function (e) {
+          let layer = e.target;
+          // bring layer to front if not older browser
+          if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+          }
+          let lat = _.get(feature, 'geometry.coordinates.1');
+          let lng = _.get(feature, 'geometry.coordinates.0');
+          var latLng = L.latLng(lat, lng);
+          var url = ""
+          //"match_all": {}
+          var query = {
+            "query": {
+              "filtered": {
+                "query": {
+                  "exists": { "field": "geocoordinates" }
+                },
+                "filter": {
+                  "geo_distance": {
+                    "distance": this._map.bufferDistance || "2km",
+                    "geocoordinates": {
+                      "lat": lat,
+                      "lon": lng
+                    }
+                  }
+                }
+              }
+            }
+          };
+          //var url = "http://192.168.99.100:9202/sessions-*/_search";
+          //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
+          var url = "/elasticsearch/sessions-*/_search?timeout=0&ignore_unavailable=true";
+
+          var map = this._map;
+          $.ajax({
+            method: "POST",
+            url: url,
+            crossDomain: true,
+            async: false,
+            data: JSON.stringify(query),
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            dataType: 'json',
+            contentType: 'application/json',
+          })
+            .done(function (data) {
+              console.log(data);
+              var content = "<h4>Returned: " + data.hits.total + " results </h4><table class='' width='700px'><th>ID</th><th>Index</th><th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+              for (var hit in data.hits.hits) {
+                content += "<tr><td title='"+data.hits.hits[hit]._id+"'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td><td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
+              }
+              content += "</table>"
+              layerPopup = L.popup()
+                .setLatLng(latLng)
+                .setContent(content)
+                .openOn(map);
+
+            })
+            .fail(function (data) {
+              console.log(data);
+            });
         }
       });
-
-      self.popups.push(popup);
     };
+
+    /*
+    mouseover: function (e) {
+      let layer = e.target;
+      // bring layer to front if not older browser
+      if (!L.Browser.ie && !L.Browser.opera) {
+        layer.bringToFront();
+      }
+      self._showTooltip(feature);
+    },
+    mouseout: function (e) {
+      self._hidePopup();
+    }
+    
+    });
+    self.popups.push(popup);
+    */
 
     /**
      * d3 method returns a darker hex color,
@@ -215,34 +306,34 @@ define(function (require) {
         }
       };
       if (self._attr.minThreshold) {
-        defaultOptions.filter = function(feature) {
+        defaultOptions.filter = function (feature) {
           const value = _.get(feature, 'properties.value', 0);
           return value >= self._attr.minThreshold;
         }
       }
 
-      if(self.geoJson.features.length <= 250) {
+      if (self.geoJson.features.length <= 250) {
         this._markerGroup = L.geoJson(self.geoJson, _.defaults(defaultOptions, options));
       } else {
         //don't block UI when processing lots of features
-        this._markerGroup = L.geoJson(self.geoJson.features.slice(0,100), _.defaults(defaultOptions, options));
+        this._markerGroup = L.geoJson(self.geoJson.features.slice(0, 100), _.defaults(defaultOptions, options));
         this._stopLoadingGeohash();
 
         this._createSpinControl();
         var place = 100;
         this._intervalId = setInterval(
-          function() {
+          function () {
             var stopIndex = place + 100;
             var halt = false;
-            if(stopIndex > self.geoJson.features.length) {
+            if (stopIndex > self.geoJson.features.length) {
               stopIndex = self.geoJson.features.length;
               halt = true;
             }
-            for(var i=place; i<stopIndex; i++) {
+            for (var i = place; i < stopIndex; i++) {
               place++;
               self._markerGroup.addData(self.geoJson.features[i]);
             }
-            if(halt) self._stopLoadingGeohash();
+            if (halt) self._stopLoadingGeohash();
           },
           200);
       }
@@ -272,10 +363,10 @@ define(function (require) {
     };
 
     BaseMarker.prototype._createTooltip = function (content, latLng) {
-      L.popup({autoPan: false})
-      .setLatLng(latLng)
-      .setContent(content)
-      .openOn(this.map);
+      L.popup({ autoPan: false })
+        .setLatLng(latLng)
+        .setContent(content)
+        .openOn(this.map);
     };
 
     /**
@@ -291,7 +382,7 @@ define(function (require) {
     };
 
     BaseMarker.prototype._createSpinControl = function () {
-      if(this._spinControl) return;
+      if (this._spinControl) return;
 
       var SpinControl = L.Control.extend({
         options: {
@@ -311,14 +402,14 @@ define(function (require) {
     }
 
     BaseMarker.prototype._removeSpinControl = function () {
-      if(!this._spinControl) return;
+      if (!this._spinControl) return;
 
       this.map.removeControl(this._spinControl);
       this._spinControl = null;
     }
 
     BaseMarker.prototype._stopLoadingGeohash = function () {
-      if(this._intervalId) {
+      if (this._intervalId) {
         window.clearInterval(this._intervalId);
       }
       this._intervalId = null;
@@ -336,7 +427,7 @@ define(function (require) {
       if ('Static' === this._attr.scaleType) {
         const domain = [];
         const colors = [];
-        this._attr.scaleBands.forEach(function(band) {
+        this._attr.scaleBands.forEach(function (band) {
           domain.push(band.high);
           colors.push(band.color);
         });
@@ -355,7 +446,7 @@ define(function (require) {
         let features = this.geoJson.features;
         if (this._attr.minThreshold) {
           const minThreshold = this._attr.minThreshold;
-          features = _.filter(this.geoJson.features, function(feature) {
+          features = _.filter(this.geoJson.features, function (feature) {
             const value = _.get(feature, 'properties.value', 0);
             return value >= minThreshold;
           });
@@ -364,31 +455,31 @@ define(function (require) {
 
         if (featureLength <= 1 || range <= 1) {
           this._legendColors = reds1;
-        } else if (featureLength <= 9  || range <= 3) {
+        } else if (featureLength <= 9 || range <= 3) {
           this._legendColors = reds3;
         } else {
           this._legendColors = reds5;
         }
-        if('Dynamic - Linear' == this._attr.scaleType) {
+        if ('Dynamic - Linear' == this._attr.scaleType) {
           this._legendQuantizer = d3.scale.quantize().domain(quantizeDomain).range(this._legendColors);
         }
         else { // Dynamic - Uneven
           // A legend scale that will create uneven ranges for the legend in an attempt
           // to split the map features uniformly across the ranges.  Useful when data is unevenly
           // distributed across the minimum - maximum range.
-          features.sort(function(x, y) {
+          features.sort(function (x, y) {
             return d3.ascending(x.properties.value, y.properties.value);
           });
 
           const ranges = [];
           const bands = this._legendColors.length;
-          for(let i=1; i<bands; i++) {
-            let index = Math.round(i*featureLength/bands);
-            if(index <= featureLength - 1) {
+          for (let i = 1; i < bands; i++) {
+            let index = Math.round(i * featureLength / bands);
+            if (index <= featureLength - 1) {
               ranges.push(features[index].properties.value);
             }
           };
-          if(ranges.length < bands) {
+          if (ranges.length < bands) {
             ranges.push(max);
           }
           this._legendQuantizer = d3.scale.threshold().domain(ranges).range(this._legendColors);

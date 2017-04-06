@@ -5,6 +5,23 @@ define(function (require) {
   var _ = require('lodash');
   require('ui/timepicker/quick_ranges');
   require('ui/timepicker/time_units');
+
+/*
+const SimpleEmitter = require('ui/utils/SimpleEmitter');
+const msearchEmitter = new SimpleEmitter();
+module.config(function($httpProvider) {
+  $httpProvider.interceptors.push(function() {
+    return {
+      response: function(resp) {
+        if (resp.config.url.includes('_msearch')) {
+          msearchEmitter.emit('msearch:response');
+        }
+        return resp;
+      }
+    }
+  });
+});
+*/
   
   module.controller('KbnTimeVisController', function (quickRanges, timeUnits, $scope, $rootScope, Private, $filter, $timeout) {
     const TIMESLIDER_INSTR = "Click and drag to select a time range."
@@ -61,6 +78,30 @@ define(function (require) {
       from: moment(),
       to: moment()
     };
+
+    //custom playback that waits for kibana msearch response before advancing timeframe
+    /*
+    let nextStep = null;
+    $scope.kibanaPlayback = {
+      play: function(nextCallback) {
+        nextCallback();
+        const delay = _.get($scope.vis.params, 'animation_frame_delay', 1) * 1000;
+        nextStep = _.debounce(nextCallback, delay);
+      },
+      pause: function() {
+        if (nextStep) {
+          nextStep.cancel();
+          nextStep = null;
+        }
+      }
+    }
+    msearchEmitter.on('msearch:response', function() {
+      if (nextStep) {
+        nextStep();
+      }
+    });
+    */
+
 
     //When timeslider carousel slide is not displayed, it has a width of 0
     //attach click handler to carousel controls to redraw

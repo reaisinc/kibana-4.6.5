@@ -5,6 +5,9 @@ angular.module('BootstrapAddons')
   const MIN_LABEL_SPACING = 8 * 14; //min spacing between labels is roughly 8 chars
   const CONTROLS_WIDTH = 72; //fixed width of buttons used to advance timeslider
   const MS_PER_DAY = 86400000;
+  //added sah
+  const ANIMATION_INTERVAL = 3000;
+
   return {
     restrict: 'E',
     scope: {
@@ -133,7 +136,7 @@ angular.module('BootstrapAddons')
           function() {
             scope.stepForward();
           },
-          1000
+          ANIMATION_INTERVAL
         );
       }
 

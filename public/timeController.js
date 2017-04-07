@@ -26,6 +26,7 @@ module.config(function($httpProvider) {
   module.controller('KbnTimeVisController', function (quickRanges, timeUnits, $scope, $rootScope, Private, $filter, $timeout) {
     const TIMESLIDER_INSTR = "Click and drag to select a time range."
     const DATE_FORMAT = 'MMMM Do YYYY, HH:mm:ss z';
+    $rootScope.$$timefilter.animation_frame_delay = _.get($scope.vis.params, 'animation_frame_delay', 1) * 1000 || 3000;
     $rootScope.plugin = {
       timePlugin: {}
     };
@@ -121,6 +122,7 @@ module.config(function($httpProvider) {
     }, 0);
 
     function setTime(rangeA) {
+      //$rootScope.$$timefilter.animation_frame_delay = _.get($scope.vis.params, 'animation_frame_delay', 1) * 1000 || 3000;
       var from = rangeA[0];
       var to = rangeA[1];
       var ours_ms = {
@@ -131,8 +133,8 @@ module.config(function($httpProvider) {
         from: dateMath.parse(from).toDate().getTime(),
         to: dateMath.parse(to).toDate().getTime()
       }
-      console.log("from, ours: " + ours_ms.from + ", theirs: " + theirs_ms.from);
-      console.log("to, ours: " + ours_ms.to + ", theirs: " + theirs_ms.to);
+      //console.log("from, ours: " + ours_ms.from + ", theirs: " + theirs_ms.from);
+      //console.log("to, ours: " + ours_ms.to + ", theirs: " + theirs_ms.to);
       
       //setTime is called from watching kibana's timefilter
       //Avoid updating our $scope if the timefilter change is triggered by us

@@ -136,7 +136,8 @@ angular.module('BootstrapAddons')
           function() {
             scope.stepForward();
           },
-          ANIMATION_INTERVAL
+          scope.$root.$$timefilter.animation_frame_delay
+          //ANIMATION_INTERVAL
         );
       }
 

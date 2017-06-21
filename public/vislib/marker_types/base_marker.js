@@ -143,6 +143,7 @@ define(function (require) {
           if (!L.Browser.ie && !L.Browser.opera) {
             layer.bringToFront();
           }
+          var map = this._map;
           let lat = _.get(feature, 'geometry.coordinates.1');
           let lng = _.get(feature, 'geometry.coordinates.0');
           var latLng = L.latLng(lat, lng);
@@ -239,7 +240,7 @@ define(function (require) {
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
 
-          var map = this._map;
+          
           $.ajax({
             method: "POST",
             url: url,

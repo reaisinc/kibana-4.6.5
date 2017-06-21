@@ -186,7 +186,7 @@
       </label>
     </div>
 
-    
+    <!-- added sah -->
     <div class="vis-option-item form-group">     
       <label>
           Select the ESRI Basemap
@@ -197,6 +197,13 @@
         ng-model="vis.params.esriService"
         ng-options="service as service for service in vis.type.params.esriServices">
       </select>
+      <label>
+          Fields to use in popup (comma separated)
+          <kbn-info info="Specify list of fields for popup window.  Example: name,address,phone"></kbn-info>
+      </label>
+      <input type="text" class="form-control"
+          name="popupFields"
+          ng-model="vis.params.popupFields">          
       <label>
           Buffer distance in kilometers for map queries
           <kbn-info info="Specify the distance to search around a marker point clicked on the map.  Example: 2km"></kbn-info>

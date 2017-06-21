@@ -147,28 +147,97 @@ define(function (require) {
           let lng = _.get(feature, 'geometry.coordinates.0');
           var latLng = L.latLng(lat, lng);
           var url = ""
-          //"match_all": {}
+          var buffer=map.bufferDistance || "0.1km"
+          metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180/Math.PI)) / Math.pow(2, map.getZoom()+8);
+          //buffer = (metersPerPixel * parseFloat(map.bufferDistance))/1000 + "km"
+          //buffer = "1km"
+          
+          var from = typeof(map.timeRange.from)=="string"?new Date(map.timeRange.from).getTime():map.timeRange.from.toDate().getTime()
+          var to = typeof(map.timeRange.to)=="string"?new Date(map.timeRange.to).getTime():map.timeRange.to.toDate().getTime()
+          var fields=["asl","ipDst","ipSrc"]
+          var fields=["user_id","speed","heading","altitude","location_timestamp"]
+          if(map.popupFields){
+          	fields = map.popupFields.split(",");
+          }
           var query = {
-            "query": {
-              "filtered": {
+          	"_source":fields,
+            "query":
+            {
+              "filtered":
+              {
                 "query": {
                   "exists": { "field": "geocoordinates" }
                 },
+                /*
                 "filter": {
                   "geo_distance": {
-                    "distance": this._map.bufferDistance || "2km",
+                    "distance": buffer,
                     "geocoordinates": {
                       "lat": lat,
                       "lon": lng
                     }
                   }
                 }
+                */
+                "filter":
+                {
+                  "bool":
+                  {
+                    "must": [
+                      {
+                        "geo_distance": {
+                          "distance": buffer,
+                          "geocoordinates": {
+                            "lat": lat,
+                            "lon": lng
+                          }
+                        }
+                      },
+                      {
+                        "range": {
+                          "location_timestamp": {
+                            "gte": from,
+                            "lte": to,
+                            "format": "epoch_millis"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
               }
             }
           };
+                /*
+                "filter" : {
+                    "geohash_cell": {
+                        "geocoordinates": {
+                            "lat": lat,
+                            "lon": lng
+                        },
+                        "precision": 7,
+                        "neighbors": true
+                    }
+                }
+                */
+                /*
+                "filter": {
+                  "geo_distance": {
+                    "distance": buffer,
+                    "geocoordinates": {
+                      "lat": lat,
+                      "lon": lng
+                    }
+                  }
+                }
+                */
+
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
-          var url = "/elasticsearch/sessions-*/_search?timeout=0&ignore_unavailable=true";
+          //var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
+          var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";          
+          //var url = "http://192.168.99.100:9202/sessions-*/_search";
+          //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
 
           var map = this._map;
           $.ajax({
@@ -184,13 +253,22 @@ define(function (require) {
             contentType: 'application/json',
           })
             .done(function (data) {
-              console.log(data);
-              var content = "<h4>Returned: " + data.hits.total + " results </h4><table class='' width='700px'><th>ID</th><th>Index</th><th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results </h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
+              for(var i in fields){
+              	content+="<th>"+fields[i]+"</th>";
+              }
+              //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
               for (var hit in data.hits.hits) {
-                content += "<tr><td title='"+data.hits.hits[hit]._id+"'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td><td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
+                content += "<tr><td><a href='#'>Edit</a></td><td title='"+data.hits.hits[hit]._id+"'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+                for(var i in fields){
+                	content+="<td>" + data.hits.hits[hit]._source[fields[i]]+"</td>";
+                }
+                content+="</tr>";
+                //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
               }
               content += "</table>"
-              layerPopup = L.popup()
+              var options={"maxWidth":1000,"minWidth":800,"closeOnClick":true,"closeButton":true}
+              layerPopup = L.popup(options)
                 .setLatLng(latLng)
                 .setContent(content)
                 .openOn(map);

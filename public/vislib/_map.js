@@ -356,9 +356,17 @@ define(function (require) {
       }
       */
     };
-    //added sah
+        //added sah save the buffer distance specified in gui
     TileMapMap.prototype.setBufferDistance = function (dist) {
       this.map.bufferDistance=dist;
+    };
+    //added sah to save timefilter
+    TileMapMap.prototype.setTimeRange = function (timerange) {
+      this.map.timeRange=timerange;
+    };
+   //added sah to save popupfields
+    TileMapMap.prototype.setPopupFields = function (fields) {
+      this.map.popupFields=fields;
     };
 
 

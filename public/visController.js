@@ -13,7 +13,7 @@ import MapProvider from 'plugins/enhanced_tilemap/vislib/_map';
 define(function (require) {
   var module = require('ui/modules').get('kibana/enhanced_tilemap', ['kibana']);
   
-  module.controller('KbnEnhancedTilemapVisController', function ($scope, $rootScope, $element, Private, courier, config, getAppState) {
+  module.controller('KbnEnhancedTilemapVisController', function ($scope, $rootScope, timefilter, $element, Private, courier, config, getAppState) {
     let aggResponse = Private(require('ui/agg_response/index'));
     const queryFilter = Private(require('ui/filter_bar/query_filter'));
     const callbacks = Private(require('plugins/enhanced_tilemap/callbacks'));
@@ -120,10 +120,12 @@ define(function (require) {
     $scope.$watch('vis.params', function (visParams) {
       map.saturateTiles(visParams.isDesaturated);
       map.clearPOILayers();
-      //added sah
+      //added sah to set the ESRI basemap
       map.setBasemap(visParams.esriService);
-      //added sah
+      //added sah to set the user defined buffer distance for mouse clicks on markers
       map.setBufferDistance(visParams.buffer);
+      //added sah to set the list of fields to retrieve and display in the popup window
+      map.setPopupFields(visParams.popupFields);
 
       $scope.vis.params.overlays.savedSearches.forEach(function (layerParams) {
         initPOILayer(layerParams);
@@ -141,6 +143,9 @@ define(function (require) {
           courier.fetch();
           return;
         }
+        //sah add timerange to map
+        map.setTimeRange(timefilter.time)
+
 
         const chartData = buildChartData(resp);
         if(!chartData) return;

@@ -112,8 +112,10 @@ angular.module('BootstrapAddons')
             stop.setTime(start.getTime() + 1000 * 60 * 60 * 24 * 7);
             break;
           case d3.time.month.utc:
+            stop.setTime(start.getTime() + 1000 * 60 * 60 * 24 * 30);
             break;
           case d3.time.year.utc:
+            stop.setTime(start.getTime() + 1000 * 60 * 60 * 24 * 7 * 52);
             break;
           default:
             console.log("Unexpected snap interval: " + snapTo + ", defaulting to seconds.");

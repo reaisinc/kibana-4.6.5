@@ -94,6 +94,33 @@ angular.module('BootstrapAddons')
       function snappedExent(extent) {
         var start = extent[0];
         var stop = extent[1];
+        //added sah  Increment by second, minute, hour, etc instead of using the calculated intervals
+        switch(snapInterval){
+          case d3.time.second.utc:
+            stop.setTime(start.getTime() + 1000 );
+            break;
+          case d3.time.minute.utc:
+            stop.setTime(start.getTime() + 1000 * 60);
+            break;
+          case d3.time.hour.utc:
+            stop.setTime(start.getTime() + 1000 * 60 * 60);
+            break;
+          case d3.time.day.utc:
+            stop.setTime(start.getTime() + 1000 * 60 * 60 * 24);
+            break;
+          case d3.time.week.utc:
+            stop.setTime(start.getTime() + 1000 * 60 * 60 * 24 * 7);
+            break;
+          case d3.time.month.utc:
+            break;
+          case d3.time.year.utc:
+            break;
+          default:
+            console.log("Unexpected snap interval: " + snapTo + ", defaulting to seconds.");
+            //interval = d3.time.second.utc;
+        }
+        //end sah
+
         var snappedStart = snapInterval.round(start);
         var snappedStop = snapInterval.round(stop);
 

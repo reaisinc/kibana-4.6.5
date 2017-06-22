@@ -129,7 +129,8 @@ define(function (require) {
       //added sah to set the list of fields to retrieve and display in the popup window
       map.setPopupFields(visParams.popupFields);
       //added sah to set the list of fields to retrieve and display in the popup window
-      map.setZoomToFeatures(visParams.zoomToFeatures);
+      //map.setZoomToFeatures(visParams.zoomToFeatures);
+      map.zoomToFeatures=visParams.zoomToFeatures;
 
       $scope.vis.params.overlays.savedSearches.forEach(function (layerParams) {
         initPOILayer(layerParams);

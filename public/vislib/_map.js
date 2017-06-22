@@ -373,9 +373,9 @@ define(function (require) {
       this.map.esFilters=filters;
     };
     //added sah to save zoom to features
-    TileMapMap.prototype.setZoomToFeatures = function (flag) {
-      this.map.zoomToFeatures=flag;
-    };
+    //TileMapMap.prototype.setZoomToFeatures = function (flag) {
+    //  this.map.zoomToFeatures=flag;
+    //};
 
 
     TileMapMap.prototype.mapBounds = function () {

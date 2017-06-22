@@ -373,9 +373,9 @@ define(function (require) {
       this.map.esFilters = filters;
     };
     //added sah to save zoom to features
-    //TileMapMap.prototype.setZoomToFeatures = function (flag) {
-    //  this.map.zoomToFeatures=flag;
-    //};
+    TileMapMap.prototype.setZoomToFeatures = function (flag) {
+      this.map.zoomToFeatures=flag;
+    };
 
 
     TileMapMap.prototype.mapBounds = function () {
@@ -502,6 +502,18 @@ document.getElementById('map').style.cursor='grab';
         });
         //bounds: utils.scaleBounds(e.layer.getBounds(), 1)
       });
+
+      this.map.on('setfilter:id', function (e) {
+        var id = _.get(e, 'id')
+        self._callbacks.id({
+          e: e,
+          chart: self._chartData,
+          params: self._attr,
+          id: id
+        });
+        //bounds: utils.scaleBounds(e.layer.getBounds(), 1)
+      });
+
 
       this.map.on('setview:fitBounds', function (e) {
         self._fitBounds();

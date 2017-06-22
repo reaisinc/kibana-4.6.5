@@ -10,13 +10,14 @@ import $ from 'jquery';
 import AggResponseGeoJsonGeoJsonProvider from 'ui/agg_response/geo_json/geo_json';
 import MapProvider from 'plugins/enhanced_tilemap/vislib/_map';
 //added sah to get current filters
-import FilterBarQueryFilterProvider from 'ui/filter_bar/query_filter';
+//import FilterBarQueryFilterProvider from 'ui/filter_bar/query_filter';
 
 define(function (require) {
   var module = require('ui/modules').get('kibana/enhanced_tilemap', ['kibana']);
   
   module.controller('KbnEnhancedTilemapVisController', function ($scope, $rootScope, timefilter, $element, Private, courier, config, getAppState) {
     let aggResponse = Private(require('ui/agg_response/index'));
+    
     const queryFilter = Private(require('ui/filter_bar/query_filter'));
     const callbacks = Private(require('plugins/enhanced_tilemap/callbacks'));
     const geoFilter = Private(require('plugins/enhanced_tilemap/vislib/geoFilter'));
@@ -153,7 +154,7 @@ define(function (require) {
         //sah add timerange to map
         map.setTimeRange(timefilter.time)
         // Somewhere in your directive, service, or controller
-        const queryFilter = Private(FilterBarQueryFilterProvider);
+        //const queryFilter = Private(FilterBarQueryFilterProvider);
         var filters = queryFilter.getFilters(); // returns array of **pinned** filters
         map.setFilters(filters)
 
@@ -185,8 +186,7 @@ define(function (require) {
         }).forEach(function (layerParams) {
           initPOILayer(layerParams);
         });
-        /*
-
+        
         if(map.zoomToFeatures){
           //need to disable map events temporarily
           //if(pointCount!=map._markers.length)
@@ -195,7 +195,7 @@ define(function (require) {
           map._enableEvents();
           //pointCount=map._markers.length;
         }
-        */
+
       }
     });
 

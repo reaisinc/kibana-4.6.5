@@ -255,7 +255,9 @@ define(function (require) {
           */
           if (map.esFilters) {
             for (var i = 0; i < map.esFilters.length; i++) {
-              query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
+              if(map.esFilters[i].query){
+                query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
+              }
             }
           }
 
@@ -281,14 +283,16 @@ define(function (require) {
           })
             .done(function (data) {
               // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
-              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
+              //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
+              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'>"
               for (var i in fields) {
                 content += "<th>" + fields[i] + "</th>";
               }
               //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
               
               for (var hit in data.hits.hits) {
-                content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+                //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+                content += "<tr>";
                 for (var i in fields) {
                   content += "<td>" + data.hits.hits[hit]._source[fields[i]] + "</td>";
                 }
@@ -296,7 +300,7 @@ define(function (require) {
                 //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
               }
               content += "</table>"
-              var options = { "maxWidth": 1000, "minWidth": 800, "closeOnClick": true, "closeButton": true }
+              var options = { "maxWidth": 800, "minWidth": 500, "closeOnClick": true, "closeButton": true,"autoPan":true,"autoClose":false }
               layerPopup = L.popup(options)
                 .setLatLng(latLng)
                 .setContent(content)

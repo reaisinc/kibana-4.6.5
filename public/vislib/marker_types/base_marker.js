@@ -148,20 +148,46 @@ define(function (require) {
           let lng = _.get(feature, 'geometry.coordinates.0');
           var latLng = L.latLng(lat, lng);
           var url = ""
-          var buffer=map.bufferDistance || "0.1km"
-          metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180/Math.PI)) / Math.pow(2, map.getZoom()+8);
-          //buffer = (metersPerPixel * parseFloat(map.bufferDistance))/1000 + "km"
+          var buffer = map.bufferDistance || "0.1km"
+          metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180 / Math.PI)) / Math.pow(2, map.getZoom() + 8);
+          buffer = (metersPerPixel * parseFloat(map.bufferDistance)) / 1000 + "km"
           //buffer = "1km"
-          
-          var from = typeof(map.timeRange.from)=="string"?new Date(map.timeRange.from).getTime():map.timeRange.from.toDate().getTime()
-          var to = typeof(map.timeRange.to)=="string"?new Date(map.timeRange.to).getTime():map.timeRange.to.toDate().getTime()
-          var fields=["asl","ipDst","ipSrc"]
-          var fields=["user_id","speed","heading","altitude","location_timestamp"]
-          if(map.popupFields){
-          	fields = map.popupFields.split(",");
+
+          var from = typeof (map.timeRange.from) == "string" ? new Date(map.timeRange.from).getTime() : map.timeRange.from.toDate().getTime()
+          var to = typeof (map.timeRange.to) == "string" ? new Date(map.timeRange.to).getTime() : map.timeRange.to.toDate().getTime()
+          var fields = ["asl", "ipDst", "ipSrc"]
+          var fields = ["user_id", "speed", "heading", "altitude", "location_timestamp"]
+          if (map.popupFields) {
+            fields = map.popupFields.split(",");
           }
+          var bbox = {
+            "geo_bounding_box": {
+              "geocoordinates": {
+                "top_left": {
+                  "lat": feature.properties.rectangle[3][0],
+                  "lon": feature.properties.rectangle[0][1]
+                },
+                "bottom_right": {
+                  "lat": feature.properties.rectangle[0][0],
+                  "lon": feature.properties.rectangle[1][1]
+                }
+              }
+            }
+          }
+          var range = {
+            "range": {
+              "location_timestamp": {
+                "gte": from,
+                "lte": to,
+                "format": "epoch_millis"
+              }
+            }
+          }
+
+
+          //feature.properties.geohash
           var query = {
-          	"_source":fields,
+            "_source": fields,
             "query":
             {
               "filtered":
@@ -185,6 +211,9 @@ define(function (require) {
                   "bool":
                   {
                     "must": [
+                      bbox,
+                      range
+                      /*
                       {
                         "geo_distance": {
                           "distance": buffer,
@@ -194,53 +223,50 @@ define(function (require) {
                           }
                         }
                       },
-                      {
-                        "range": {
-                          "location_timestamp": {
-                            "gte": from,
-                            "lte": to,
-                            "format": "epoch_millis"
-                          }
-                        }
-                      }
+                      */
                     ]
                   }
                 }
               }
             }
           };
-                /*
-                "filter" : {
-                    "geohash_cell": {
-                        "geocoordinates": {
-                            "lat": lat,
-                            "lon": lng
-                        },
-                        "precision": 7,
-                        "neighbors": true
-                    }
-                }
-                */
-                /*
-                "filter": {
-                  "geo_distance": {
-                    "distance": buffer,
-                    "geocoordinates": {
+          /*
+          "filter" : {
+              "geohash_cell": {
+                  "geocoordinates": {
                       "lat": lat,
                       "lon": lng
-                    }
-                  }
-                }
-                */
+                  },
+                  "precision": 7,
+                  "neighbors": true
+              }
+          }
+          */
+          /*
+          "filter": {
+            "geo_distance": {
+              "distance": buffer,
+              "geocoordinates": {
+                "lat": lat,
+                "lon": lng
+              }
+            }
+          }
+          */
+          if (map.esFilters) {
+            for (var i = 0; i < map.esFilters.length; i++) {
+              query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
+            }
+          }
 
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
           //var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
-          var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";          
+          var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
 
-          
+
           $.ajax({
             method: "POST",
             url: url,
@@ -254,21 +280,23 @@ define(function (require) {
             contentType: 'application/json',
           })
             .done(function (data) {
-              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results </h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
-              for(var i in fields){
-              	content+="<th>"+fields[i]+"</th>";
+              // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
+              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
+              for (var i in fields) {
+                content += "<th>" + fields[i] + "</th>";
               }
               //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+              
               for (var hit in data.hits.hits) {
-                content += "<tr><td><a href='#'>Edit</a></td><td title='"+data.hits.hits[hit]._id+"'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
-                for(var i in fields){
-                	content+="<td>" + data.hits.hits[hit]._source[fields[i]]+"</td>";
+                content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+                for (var i in fields) {
+                  content += "<td>" + data.hits.hits[hit]._source[fields[i]] + "</td>";
                 }
-                content+="</tr>";
+                content += "</tr>";
                 //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
               }
               content += "</table>"
-              var options={"maxWidth":1000,"minWidth":800,"closeOnClick":true,"closeButton":true}
+              var options = { "maxWidth": 1000, "minWidth": 800, "closeOnClick": true, "closeButton": true }
               layerPopup = L.popup(options)
                 .setLatLng(latLng)
                 .setContent(content)
@@ -294,7 +322,7 @@ define(function (require) {
     mouseout: function (e) {
       self._hidePopup();
     }
-    
+     
     });
     self.popups.push(popup);
     */

@@ -9,6 +9,8 @@ import _ from 'lodash';
 import $ from 'jquery';
 import AggResponseGeoJsonGeoJsonProvider from 'ui/agg_response/geo_json/geo_json';
 import MapProvider from 'plugins/enhanced_tilemap/vislib/_map';
+//added sah to get current filters
+import FilterBarQueryFilterProvider from 'ui/filter_bar/query_filter';
 
 define(function (require) {
   var module = require('ui/modules').get('kibana/enhanced_tilemap', ['kibana']);
@@ -132,6 +134,7 @@ define(function (require) {
       });
     });
 
+
     $scope.$watch('esResponse', function (resp) {
       if(resp) {
         /*
@@ -145,6 +148,10 @@ define(function (require) {
         }
         //sah add timerange to map
         map.setTimeRange(timefilter.time)
+        // Somewhere in your directive, service, or controller
+        const queryFilter = Private(FilterBarQueryFilterProvider);
+        queryFilter.getFilters(); // returns array of **pinned** filters
+
 
 
         const chartData = buildChartData(resp);

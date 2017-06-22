@@ -356,7 +356,7 @@ define(function (require) {
       }
       */
     };
-        //added sah save the buffer distance specified in gui
+    //added sah save the buffer distance specified in gui
     TileMapMap.prototype.setBufferDistance = function (dist) {
       this.map.bufferDistance=dist;
     };
@@ -367,6 +367,10 @@ define(function (require) {
    //added sah to save popupfields
     TileMapMap.prototype.setPopupFields = function (fields) {
       this.map.popupFields=fields;
+    };
+   //added sah to save filters
+    TileMapMap.prototype.setFilters = function (filters) {
+      this.map.esFilters=filters;
     };
 
 

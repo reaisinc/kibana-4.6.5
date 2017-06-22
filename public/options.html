@@ -204,6 +204,7 @@
       <input type="text" class="form-control"
           name="popupFields"
           ng-model="vis.params.popupFields">          
+<!--          
       <label>
           Buffer distance in kilometers for map queries
           <kbn-info info="Specify the distance to search around a marker point clicked on the map.  Example: 2km"></kbn-info>
@@ -211,6 +212,15 @@
       <input type="text" class="form-control"
           name="buffer"
           ng-model="vis.params.buffer">    
+    </div>
+-->
+      <label>
+          Automatically zoom map to extent of points
+          <kbn-info info="Zooms the map to the full extent of the features"></kbn-info>
+      </label>
+        <input type="checkbox"
+        name="zoomToFeatures"
+        ng-model="vis.params.zoomToFeatures">
     </div>
 
     <div class="vis-option-item form-group">

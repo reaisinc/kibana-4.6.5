@@ -357,9 +357,9 @@ define(function (require) {
       */
     };
     //added sah save the buffer distance specified in gui
-    TileMapMap.prototype.setBufferDistance = function (dist) {
-      this.map.bufferDistance=dist;
-    };
+    //TileMapMap.prototype.setBufferDistance = function (dist) {
+    //  this.map.bufferDistance=dist;
+    //};
     //added sah to save timefilter
     TileMapMap.prototype.setTimeRange = function (timerange) {
       this.map.timeRange=timerange;
@@ -371,6 +371,10 @@ define(function (require) {
    //added sah to save filters
     TileMapMap.prototype.setFilters = function (filters) {
       this.map.esFilters=filters;
+    };
+    //added sah to save zoom to features
+    TileMapMap.prototype.setZoomToFeatures = function (flag) {
+      this.map.zoomToFeatures=flag;
     };
 
 

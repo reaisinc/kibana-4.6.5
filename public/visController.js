@@ -125,9 +125,11 @@ define(function (require) {
       //added sah to set the ESRI basemap
       map.setBasemap(visParams.esriService);
       //added sah to set the user defined buffer distance for mouse clicks on markers
-      map.setBufferDistance(visParams.buffer);
+      //map.setBufferDistance(visParams.buffer);
       //added sah to set the list of fields to retrieve and display in the popup window
       map.setPopupFields(visParams.popupFields);
+      //added sah to set the list of fields to retrieve and display in the popup window
+      map.setZoomToFeatures(visParams.zoomToFeatures);
 
       $scope.vis.params.overlays.savedSearches.forEach(function (layerParams) {
         initPOILayer(layerParams);
@@ -150,7 +152,8 @@ define(function (require) {
         map.setTimeRange(timefilter.time)
         // Somewhere in your directive, service, or controller
         const queryFilter = Private(FilterBarQueryFilterProvider);
-        queryFilter.getFilters(); // returns array of **pinned** filters
+        var filters = queryFilter.getFilters(); // returns array of **pinned** filters
+        map.setFilters(filters)
 
 
 
@@ -180,6 +183,9 @@ define(function (require) {
         }).forEach(function (layerParams) {
           initPOILayer(layerParams);
         });
+        if(map.zoomToFeatures){
+          map._fitBounds();
+        }
       }
     });
 

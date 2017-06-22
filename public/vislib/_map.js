@@ -36,7 +36,7 @@ define(function (require) {
     };
     //default ESRI basemap - added sah 
     var esriBasemap = "Streets";
-    var bufferDistance="2km";
+    var bufferDistance = "2km";
 
     /**
      * Tile Map Maps
@@ -59,7 +59,7 @@ define(function (require) {
       this._mapZoom = _.get(params, 'zoom') || defaultMapZoom;
       this._setAttr(params.attr);
       this._isEditable = params.editable || false;
-      this._esriBasemap =  params.esriBasemap;
+      this._esriBasemap = params.esriBasemap;
       this._bufferDistance = "2km";
       var mapOptions = {
         minZoom: 1,
@@ -362,15 +362,15 @@ define(function (require) {
     //};
     //added sah to save timefilter
     TileMapMap.prototype.setTimeRange = function (timerange) {
-      this.map.timeRange=timerange;
+      this.map.timeRange = timerange;
     };
-   //added sah to save popupfields
+    //added sah to save popupfields
     TileMapMap.prototype.setPopupFields = function (fields) {
-      this.map.popupFields=fields;
+      this.map.popupFields = fields;
     };
-   //added sah to save filters
+    //added sah to save filters
     TileMapMap.prototype.setFilters = function (filters) {
-      this.map.esFilters=filters;
+      this.map.esFilters = filters;
     };
     //added sah to save zoom to features
     //TileMapMap.prototype.setZoomToFeatures = function (flag) {
@@ -435,6 +435,40 @@ define(function (require) {
         }
       }
     };
+    /*
+    //https://gis.stackexchange.com/questions/54454/disable-leaflet-interaction-temporary
+    map.dragging.disable();
+map.touchZoom.disable();
+map.doubleClickZoom.disable();
+map.scrollWheelZoom.disable();
+map.boxZoom.disable();
+map.keyboard.disable();
+if (map.tap) map.tap.disable();
+document.getElementById('map').style.cursor='default';
+
+turn it on again with
+
+map.dragging.enable();
+map.touchZoom.enable();
+map.doubleClickZoom.enable();
+map.scrollWheelZoom.enable();
+map.boxZoom.enable();
+map.keyboard.enable();
+if (map.tap) map.tap.enable();
+document.getElementById('map').style.cursor='grab';
+*/
+    //added sah to enable all map events
+    TileMapMap.prototype._enableEvents = function () {
+      this.map._handlers.forEach(function (handler) {
+        handler.enable();
+      });
+    }
+    //added sah to disable all map events
+    TileMapMap.prototype._disableEvents = function () {
+      this.map._handlers.forEach(function (handler) {
+        handler.disable();
+      });
+    }
 
     TileMapMap.prototype._attachEvents = function () {
       var self = this;
@@ -459,14 +493,14 @@ define(function (require) {
 
       //added sah
       this.map.on('setfilter:mouseClick', function (e) {
-            var bounds =  _.get(e, 'bounds')
-            self._callbacks.rectangle({
-              e: e,
-              chart: self._chartData,
-              params: self._attr,
-              bounds: bounds
-            });
-              //bounds: utils.scaleBounds(e.layer.getBounds(), 1)
+        var bounds = _.get(e, 'bounds')
+        self._callbacks.rectangle({
+          e: e,
+          chart: self._chartData,
+          params: self._attr,
+          bounds: bounds
+        });
+        //bounds: utils.scaleBounds(e.layer.getBounds(), 1)
       });
 
       this.map.on('setview:fitBounds', function (e) {

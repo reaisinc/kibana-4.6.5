@@ -121,6 +121,30 @@ define(function (require) {
           if (!L.Browser.ie && !L.Browser.opera) {
             layer.bringToFront();
           }
+          if (feature.properties.rectangle) {
+          var bounds = {
+            "top_left": { lat: feature.properties.rectangle[3][0], lon: feature.properties.rectangle[0][1] },
+            "bottom_right": { lat: feature.properties.rectangle[0][0], lon: feature.properties.rectangle[1][1] }
+          }
+           //must.push(bbox);
+            this._map.fire('setfilter:mouseClick', { bounds: bounds });
+          }
+          
+          /*
+          if (map.esFilters) {
+            //map.esFilters.addFilter()
+            
+            for (var i = 0; i < map.esFilters.length; i++) {
+              if (map.esFilters[i].query) {
+                //query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
+                must.push(map.esFilters[i].query)
+              }
+            }
+            
+          }
+          */
+
+          /*
           let lat = _.get(feature, 'geometry.coordinates.1');
           let lng = _.get(feature, 'geometry.coordinates.0');
           //var latLng = L.latLng(lat, lng);
@@ -135,7 +159,10 @@ define(function (require) {
             "top_left": { lat: lat + latAccuracy, lon: lng - lngAccuracy },
             "bottom_right": { lat: lat - latAccuracy, lon: lng + lngAccuracy }
           }
+
           this._map.fire('setfilter:mouseClick', { bounds: bounds });
+          */
+          //this._map.fire('setfilter:id', { id: bounds });
         },
         click: function (e) {
           let layer = e.target;
@@ -148,9 +175,9 @@ define(function (require) {
           let lng = _.get(feature, 'geometry.coordinates.0');
           var latLng = L.latLng(lat, lng);
           var url = ""
-          var buffer = map.bufferDistance || "0.1km"
-          metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180 / Math.PI)) / Math.pow(2, map.getZoom() + 8);
-          buffer = (metersPerPixel * parseFloat(map.bufferDistance)) / 1000 + "km"
+          //var buffer = map.bufferDistance || "0.1km"
+          //metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180 / Math.PI)) / Math.pow(2, map.getZoom() + 8);
+          //buffer = (metersPerPixel * parseFloat(map.bufferDistance)) / 1000 + "km"
           //buffer = "1km"
 
           var from = typeof (map.timeRange.from) == "string" ? new Date(map.timeRange.from).getTime() : map.timeRange.from.toDate().getTime()
@@ -160,29 +187,46 @@ define(function (require) {
           if (map.popupFields) {
             fields = map.popupFields.split(",");
           }
-          var bbox = {
-            "geo_bounding_box": {
-              "geocoordinates": {
-                "top_left": {
-                  "lat": feature.properties.rectangle[3][0],
-                  "lon": feature.properties.rectangle[0][1]
-                },
-                "bottom_right": {
-                  "lat": feature.properties.rectangle[0][0],
-                  "lon": feature.properties.rectangle[1][1]
+          var must = []
+          if (feature.properties.rectangle) {
+            var bbox = {
+              "geo_bounding_box": {
+                "geocoordinates": {
+                  "top_left": {
+                    "lat": feature.properties.rectangle[3][0],
+                    "lon": feature.properties.rectangle[0][1]
+                  },
+                  "bottom_right": {
+                    "lat": feature.properties.rectangle[0][0],
+                    "lon": feature.properties.rectangle[1][1]
+                  }
                 }
               }
             }
+            must.push(bbox);
           }
-          var range = {
-            "range": {
-              "location_timestamp": {
-                "gte": from,
-                "lte": to,
-                "format": "epoch_millis"
+
+          if (to && from) {
+            var range = {
+              "range": {
+                "location_timestamp": {
+                  "gte": from,
+                  "lte": to,
+                  "format": "epoch_millis"
+                }
+              }
+            }
+            must.push(range);
+          }
+          if (map.esFilters) {
+            for (var i = 0; i < map.esFilters.length; i++) {
+              if (map.esFilters[i].query) {
+                //query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
+                must.push(map.esFilters[i].query)
               }
             }
           }
+
 
 
           //feature.properties.geohash
@@ -210,21 +254,7 @@ define(function (require) {
                 {
                   "bool":
                   {
-                    "must": [
-                      bbox,
-                      range
-                      /*
-                      {
-                        "geo_distance": {
-                          "distance": buffer,
-                          "geocoordinates": {
-                            "lat": lat,
-                            "lon": lng
-                          }
-                        }
-                      },
-                      */
-                    ]
+                    "must": must
                   }
                 }
               }
@@ -253,14 +283,6 @@ define(function (require) {
             }
           }
           */
-          if (map.esFilters) {
-            for (var i = 0; i < map.esFilters.length; i++) {
-              if(map.esFilters[i].query){
-                query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
-              }
-            }
-          }
-
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
           //var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
@@ -289,7 +311,7 @@ define(function (require) {
                 content += "<th>" + fields[i] + "</th>";
               }
               //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
-              
+
               for (var hit in data.hits.hits) {
                 //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
                 content += "<tr>";
@@ -300,7 +322,7 @@ define(function (require) {
                 //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
               }
               content += "</table>"
-              var options = { "maxWidth": 800, "minWidth": 500, "closeOnClick": true, "closeButton": true,"autoPan":true,"autoClose":false }
+              var options = { "maxWidth": 800, "minWidth": 500, "closeOnClick": true, "closeButton": true, "autoPan": true, "autoClose": false }
               layerPopup = L.popup(options)
                 .setLatLng(latLng)
                 .setContent(content)

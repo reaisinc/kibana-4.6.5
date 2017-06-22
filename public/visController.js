@@ -28,6 +28,7 @@ define(function (require) {
     const ResizeChecker = Private(require('ui/vislib/lib/resize_checker'));
     let map = null;
     let collar = null;
+    
     appendMap();
     modifyToDsl();
 
@@ -90,7 +91,7 @@ define(function (require) {
           numGeoBuckets = aggs[key].buckets.length;
         }
       });
-      console.log("geogrids: " + numGeoBuckets);
+      //console.log("geogrids: " + numGeoBuckets);
       if(numGeoBuckets === 0) return;
       var tableGroup = aggResponse.tabify($scope.vis, resp, {
         canSplit: true,
@@ -184,9 +185,17 @@ define(function (require) {
         }).forEach(function (layerParams) {
           initPOILayer(layerParams);
         });
+        /*
+
         if(map.zoomToFeatures){
+          //need to disable map events temporarily
+          //if(pointCount!=map._markers.length)
+          map._disableEvents();
           map._fitBounds();
+          map._enableEvents();
+          //pointCount=map._markers.length;
         }
+        */
       }
     });
 

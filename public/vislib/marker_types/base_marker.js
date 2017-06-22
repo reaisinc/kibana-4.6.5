@@ -306,7 +306,7 @@ define(function (require) {
             .done(function (data) {
               // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
               //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
-              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='100%'>"
+              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table width='100%'>"
               for (var i in fields) {
                 content += "<th>" + fields[i] + "</th>";
               }

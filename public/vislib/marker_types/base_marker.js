@@ -122,14 +122,14 @@ define(function (require) {
             layer.bringToFront();
           }
           if (feature.properties.rectangle) {
-          var bounds = {
-            "top_left": { lat: feature.properties.rectangle[3][0], lon: feature.properties.rectangle[0][1] },
-            "bottom_right": { lat: feature.properties.rectangle[0][0], lon: feature.properties.rectangle[1][1] }
-          }
-           //must.push(bbox);
+            var bounds = {
+              "top_left": { lat: feature.properties.rectangle[3][0], lon: feature.properties.rectangle[0][1] },
+              "bottom_right": { lat: feature.properties.rectangle[0][0], lon: feature.properties.rectangle[1][1] }
+            }
+            //must.push(bbox);
             this._map.fire('setfilter:mouseClick', { bounds: bounds });
           }
-          
+
           /*
           if (map.esFilters) {
             //map.esFilters.addFilter()
@@ -306,7 +306,7 @@ define(function (require) {
             .done(function (data) {
               // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
               //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
-              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'>"
+              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='100%'>"
               for (var i in fields) {
                 content += "<th>" + fields[i] + "</th>";
               }

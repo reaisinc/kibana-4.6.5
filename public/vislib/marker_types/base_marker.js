@@ -174,6 +174,8 @@ define(function (require) {
           let lat = _.get(feature, 'geometry.coordinates.1');
           let lng = _.get(feature, 'geometry.coordinates.0');
           var latLng = L.latLng(lat, lng);
+          
+
           var url = ""
           //var buffer = map.bufferDistance || "0.1km"
           //metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180 / Math.PI)) / Math.pow(2, map.getZoom() + 8);
@@ -322,7 +324,34 @@ define(function (require) {
                 //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
               }
               content += "</table>"
-              var options = { "maxWidth": 800, "minWidth": 500, "closeOnClick": true, "closeButton": true, "autoPan": true, "autoClose": false }
+              var minWidth = 500
+              var options = { "maxWidth": 800, "minWidth": minWidth, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true }
+              var point = map.latLngToContainerPoint(latLng);
+              var mapSize = map.getSize();
+              var calcHeight = (data.hits.hits.length * 25) + 50;
+              var buffer = 10;
+              //if box overlaps right side
+              if(point.x > mapSize.x - (minWidth/2) - buffer){
+                point.x = mapSize.x - (minWidth/2) - buffer;
+              }
+              //if box overlaps left side
+              if(point.x < (minWidth/2)  ){
+                //add extra to move past map buttons (zoom in/out, etc)
+                point.x = (minWidth/2) +(buffer+40);
+              }
+              //if box overlaps top
+              if(point.y < calcHeight){
+                point.y = calcHeight + buffer;
+              }
+              //if box overlaps bottom
+              /*
+              if(point.y > mapSize.y - calcHeight){
+                point.y = mapSize.y - calcHeight - buffer;
+              }
+              */
+              //map.containerPointToLatLng(<Point> point)	LatLng
+              latLng = map.containerPointToLatLng(point);
+
               layerPopup = L.popup(options)
                 .setLatLng(latLng)
                 .setContent(content)

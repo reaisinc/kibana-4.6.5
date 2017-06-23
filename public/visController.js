@@ -132,12 +132,27 @@ define(function (require) {
       map.setPopupFields(visParams.popupFields);
       //added sah to set the list of fields to retrieve and display in the popup window
       //map.setZoomToFeatures(visParams.zoomToFeatures);
-      map.zoomToFeatures=visParams.zoomToFeatures;
+      //map.zoomToFeatures=visParams.zoomToFeatures;
 
       $scope.vis.params.overlays.savedSearches.forEach(function (layerParams) {
         initPOILayer(layerParams);
       });
     });
+    /*
+    $rootScope.$on('timeAnimationStart', function () {
+        map.zoomToFeatures=true;
+             //do stuff
+    })      
+    $rootScope.$on('timeAnimationStop', function () {
+         //do stuff
+        map.zoomToFeatures=false;
+    })
+
+    $rootScope.$on('autoPanDuringAnimation', function () {
+      map.zoomToFeatures=!map.zoomToFeatures;
+             //do stuff
+    })      
+    */
 
 
     $scope.$watch('esResponse', function (resp) {
@@ -190,9 +205,12 @@ define(function (require) {
         if(map.zoomToFeatures){
           //need to disable map events temporarily
           //if(pointCount!=map._markers.length)
-          map._disableEvents();
+          //map._disableEvents();
+          map._skipZoomend=true;
+          map._skipMoveend=true;
+          
           map._fitBounds();
-          map._enableEvents();
+          //map._enableEvents();
           //pointCount=map._markers.length;
         }
 

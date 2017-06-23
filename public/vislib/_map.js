@@ -61,6 +61,7 @@ define(function (require) {
       this._isEditable = params.editable || false;
       this._esriBasemap = params.esriBasemap;
       this._bufferDistance = "2km";
+      this.zoomToFeatures = false;
       var mapOptions = {
         minZoom: 1,
         maxZoom: 18,
@@ -374,7 +375,7 @@ define(function (require) {
     };
     //added sah to save zoom to features
     TileMapMap.prototype.setZoomToFeatures = function (flag) {
-      this.map.zoomToFeatures=flag;
+      this.map.zoomToFeatures = flag;
     };
 
 
@@ -457,17 +458,46 @@ map.keyboard.enable();
 if (map.tap) map.tap.enable();
 document.getElementById('map').style.cursor='grab';
 */
+/*
+ng-click="$emit('customEvent')"
+Then in your controller you can use
+$rootScope.$on('customEvent', function(){
+    // do something
+})
+or
+$rootScope.$broadcast('buttonPressedEvent');
+And receive it like this:
+$rootScope.$on('buttonPressedEvent', function () {
+             //do stuff
+        })
+*/
     //added sah to enable all map events
     TileMapMap.prototype._enableEvents = function () {
       this.map._handlers.forEach(function (handler) {
         handler.enable();
       });
+      this.map.dragging.enable();
+      this.map.touchZoom.enable();
+      this.map.doubleClickZoom.enable();
+      this.map.scrollWheelZoom.enable();
+      this.map.boxZoom.enable();
+      this.map.keyboard.enable();
+      if (this.map.tap) this.map.tap.enable();
+
     }
     //added sah to disable all map events
     TileMapMap.prototype._disableEvents = function () {
       this.map._handlers.forEach(function (handler) {
         handler.disable();
       });
+      this.map.dragging.disable();
+      this.map.touchZoom.disable();
+      this.map.doubleClickZoom.disable();
+      this.map.scrollWheelZoom.disable();
+      this.map.boxZoom.disable();
+      this.map.keyboard.disable();
+      if (this.map.tap) this.map.tap.disable();
+
     }
 
     TileMapMap.prototype._attachEvents = function () {
@@ -476,6 +506,11 @@ document.getElementById('map').style.cursor='grab';
       this.map.on('moveend', _.debounce(function setZoomCenter(ev) {
         if (!self.map) return;
         if (self._hasSameLocation()) return;
+        //added sah to skip refresh during map animation
+        if(self._skipZoomend||self._skipMoveend){
+        	self._skipMoveend=false;
+        	return;
+        }
 
         // update internal center and zoom references
         self._mapCenter = self.map.getCenter();
@@ -578,6 +613,12 @@ document.getElementById('map').style.cursor='grab';
         if (!self.map) return;
         if (self._hasSameLocation()) return;
         if (!self._callbacks) return;
+        //added sah to skip refresh during map animation
+        if(self._skipZoomend||self._skipMoveend){
+        	self._skipZoomend=false;
+        	return;
+        }
+        
         self._callbacks.mapZoomEnd({
           chart: self._chartData,
           map: self.map,

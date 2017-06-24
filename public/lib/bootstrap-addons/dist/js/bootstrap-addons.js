@@ -42,8 +42,10 @@ angular.module('BootstrapAddons')
 
       scope.togglePlay = function() {
         if(intervalId) {
+          //scope.$root.$broadcast('timeAnimationStop');
           pause();
         } else {
+          //scope.$root.$broadcast('timeAnimationStart');
           play();
         }
       }

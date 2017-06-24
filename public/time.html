@@ -2,6 +2,40 @@
   <h3 ng-show="config.title">{{config.title}}</h3>
   
   <carousel interval="0">
+    <slide ng-if="vis.params.enable_animation">
+        <h4 style="margin-top: 0px; margin-bottom: 2px;">
+          <strong><i aria-hidden="true" class="fa fa-clock-o"></i> Time Animation</strong> 
+          <pretty-duration class="ng-isolate-scope" to="time.to" from="time.from"></pretty-duration>
+        </h4>
+        <p>
+          {{animationTitle}}
+        </p>
+        <!--
+        <div class="small">
+              <label>
+                <input
+                  ng-model="relative.round"
+                  ng-checked="relative.round"
+                  ng-change="$emit('autoPanDuringAnimation')"
+                  type="checkbox">
+                Auto zoom map during animation
+              </label>
+        </div>
+        -->
+
+        <timeslider start="time.absolute_from.toDate()" end="time.absolute_to.toDate()" ticks="100" playback="kibanaPlayback" on-change="filterByTime" on-clear="removeTimeFilter" style="margin-left: 43px; margin-right: 43px;"></timeslider>
+        <div class="small" style="display: inline-block;">
+          <label style="float:left;">
+            increment by 
+          </label>
+          <select
+            ng-model="slider.roundUnit"
+            ng-options="opt.value as opt.text for opt in sliderRoundOptions"
+            ng-change="snapToNearest()"
+            style="margin-left: .4em;">
+          </select>
+        </div>
+      </slide>    
       <slide ng-if="vis.params.enable_quick" active="activeSlide.quick">
         <h4 style="margin-top: 0px; margin-bottom: 2px;">
           <strong><i aria-hidden="true" class="fa fa-clock-o"></i> Quick</strong>
@@ -102,28 +136,7 @@
         </form>
       </slide>
 
-      <slide ng-if="vis.params.enable_animation">
-        <h4 style="margin-top: 0px; margin-bottom: 2px;">
-          <strong><i aria-hidden="true" class="fa fa-clock-o"></i> Time Animation</strong> 
-          <pretty-duration class="ng-isolate-scope" to="time.to" from="time.from"></pretty-duration>
-        </h4>
-        <p>
-          {{animationTitle}}
-        </p>
-
-        <timeslider start="time.absolute_from.toDate()" end="time.absolute_to.toDate()" ticks="100" playback="kibanaPlayback" on-change="filterByTime" on-clear="removeTimeFilter" style="margin-left: 43px; margin-right: 43px;"></timeslider>
-        <div class="small" style="display: inline-block;">
-          <label style="float:left;">
-            increment by 
-          </label>
-          <select
-            ng-model="slider.roundUnit"
-            ng-options="opt.value as opt.text for opt in sliderRoundOptions"
-            ng-change="snapToNearest()"
-            style="margin-left: .4em;">
-          </select>
-        </div>
-      </slide>
+      
     </carousel>
   
 

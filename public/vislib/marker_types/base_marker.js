@@ -129,6 +129,7 @@ define(function (require) {
             //must.push(bbox);
             this._map.fire('setfilter:mouseClick', { bounds: bounds });
           }
+          return false;
 
           /*
           if (map.esFilters) {
@@ -164,7 +165,97 @@ define(function (require) {
           */
           //this._map.fire('setfilter:id', { id: bounds });
         },
+
+        //dblclick: function (e) {
+
+        //        },
         click: function (e) {
+          if(e.originalEvent.shiftKey){
+
+            //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670,151.1957&radius=500&types=food&name=cruise&key=YOUR_API_KEY
+            //rankby=distance 
+            //https://developers.google.com/places/web-service/search
+            //api for geocoding:  
+            let layer = e.target;
+            // bring layer to front if not older browser
+            if (!L.Browser.ie && !L.Browser.opera) {
+              layer.bringToFront();
+            }
+            var map = this._map;
+            let lat = _.get(feature, 'geometry.coordinates.1');
+            let lng = _.get(feature, 'geometry.coordinates.0');
+            var latLng = L.latLng(lat, lng);
+            var url = "/api/sense/proxy?uri=" + escape("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + lat + "," + lng + "&rankby=distance&key=AIzaSyCNEMoMEB1daSyHQLLbpUWzURD6RQDuIVw")
+            //&radius=500&types=food&name=cruise
+            $.ajax({
+              method: "POST",
+              url: url,
+              crossDomain: true,
+              async: false,
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+              },
+              dataType: 'json',
+              contentType: 'application/json',
+            })
+              .done(function (data) {
+                // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
+                //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
+                //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table width='100%'>"
+                var content = "<h4>Nearby places</h4><table width='100%'>"
+                var fields = ["name", "types"];// "vicinity"
+
+
+                for (var i in fields) {
+                  content += "<th>" + fields[i] + "</th>";
+                  //types" : [ "restaurant", "food", "establishment" ],         "vicinity"
+                }
+                //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+
+                for (var hit in data.results) {
+                  //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+                  content += "<tr>";
+                  for (var i in fields) {
+                    var str = data.results[hit][fields[i]];
+                    if (str instanceof Array) str = str.join(", ");
+                    content += "<td>" + str + "</td>";
+                  }
+                  content += "</tr>";
+                  //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
+                }
+                content += "</table>"
+                var minWidth = 500
+                var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
+                //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
+                var point = map.latLngToContainerPoint(latLng);
+                var mapSize = map.getSize();
+                var calcHeight = (data.results.length * 25) + 50;
+                var buffer = 10;
+                //if box overlaps right side
+                if (point.x > mapSize.x - (minWidth / 2) - buffer) {
+                  point.x = mapSize.x - (minWidth / 2) - buffer;
+                }
+                //if box overlaps left side
+                if (point.x < (minWidth / 2)) {
+                  //add extra to move past map buttons (zoom in/out, etc)
+                  point.x = (minWidth / 2) + (buffer + 40);
+                }
+                //if box overlaps top
+                if (point.y < calcHeight) {
+                  point.y = calcHeight + buffer;
+                }
+                latLng = map.containerPointToLatLng(point);
+                layerPopup = L.popup(options)
+                  .setLatLng(latLng)
+                  .setContent(content)
+                  .openOn(map);
+              })
+              .fail(function (data) {
+                console.log(data);
+              });
+            return false;
+          }
+
           let layer = e.target;
           // bring layer to front if not older browser
           if (!L.Browser.ie && !L.Browser.opera) {
@@ -174,7 +265,7 @@ define(function (require) {
           let lat = _.get(feature, 'geometry.coordinates.1');
           let lng = _.get(feature, 'geometry.coordinates.0');
           var latLng = L.latLng(lat, lng);
-          
+
 
           var url = ""
           //var buffer = map.bufferDistance || "0.1km"
@@ -308,7 +399,10 @@ define(function (require) {
             .done(function (data) {
               // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
               //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
-              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table width='100%'>"
+              var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table width='100%'>";
+              //<i style=\"float:right\" tooltip-placement=\"top\" tooltip=\"Find nearby places\"  ng-click=\"findNearby(" + latLng.lat + "," + latLng.lng + ")\"  class=\"ng-scope\"><ng-md-icon icon=\"mode_edit\" size=\"16\" style=\"fill: #b4bcc2\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><path d=\"M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z\"/> </svg>	</ng-md-icon> </i><table width='100%'>"
+
+              //<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               for (var i in fields) {
                 content += "<th>" + fields[i] + "</th>";
               }
@@ -331,16 +425,16 @@ define(function (require) {
               var calcHeight = (data.hits.hits.length * 25) + 50;
               var buffer = 10;
               //if box overlaps right side
-              if(point.x > mapSize.x - (minWidth/2) - buffer){
-                point.x = mapSize.x - (minWidth/2) - buffer;
+              if (point.x > mapSize.x - (minWidth / 2) - buffer) {
+                point.x = mapSize.x - (minWidth / 2) - buffer;
               }
               //if box overlaps left side
-              if(point.x < (minWidth/2)  ){
+              if (point.x < (minWidth / 2)) {
                 //add extra to move past map buttons (zoom in/out, etc)
-                point.x = (minWidth/2) +(buffer+40);
+                point.x = (minWidth / 2) + (buffer + 40);
               }
               //if box overlaps top
-              if(point.y < calcHeight){
+              if (point.y < calcHeight) {
                 point.y = calcHeight + buffer;
               }
               //if box overlaps bottom
@@ -361,8 +455,11 @@ define(function (require) {
             .fail(function (data) {
               console.log(data);
             });
+          return false;
         }
+
       });
+      return false;
     };
 
     /*

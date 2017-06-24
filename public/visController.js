@@ -153,6 +153,11 @@ define(function (require) {
              //do stuff
     })      
     */
+    /*
+    $scope.findNearby=function(lat,lng){
+alert("ok")
+    }
+    */
 
 
     $scope.$watch('esResponse', function (resp) {

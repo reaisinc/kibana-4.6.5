@@ -23,3 +23,6 @@
 .small-screen {
   display: block !important;
 }
+.leaflet-popup-tip-container, .leaflet-popup-close-button {
+    display: block !important;
+}

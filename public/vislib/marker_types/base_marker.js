@@ -396,7 +396,7 @@ define(function (require) {
             }
           }
           */
-          var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>Loading nearby places</h4></td></tr></tbody></table>";
+          var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>Loading user information</h4></td></tr></tbody></table>";
           var minWidth = 500
           var options = { "maxWidth": 800, "minWidth": minWidth, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true }
           var layerPopup = L.popup(options)

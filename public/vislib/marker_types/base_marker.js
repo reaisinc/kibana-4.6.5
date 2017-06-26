@@ -170,23 +170,45 @@ define(function (require) {
 
         //        },
         click: function (e) {
-          if(e.originalEvent.shiftKey){
+          var map = this._map;
+          var oldMapCursor = map.getContainer().style.cursor;
+          if (oldMapCursor === undefined) {
+            oldMapCursor = 'default';
+          }
+          var oldBodyCursor = document.body.style.cursor;
+          if (oldBodyCursor === undefined) {
+            oldBodyCursor = 'default';
+          }
 
+          map.getContainer().style.cursor = 'progress'
+          document.body.style.cursor = 'progress';
+          let layer = e.target;
+          // bring layer to front if not older browser
+          if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+          }
+
+          let lat = _.get(feature, 'geometry.coordinates.1');
+          let lng = _.get(feature, 'geometry.coordinates.0');
+          var latLng = L.latLng(lat, lng);
+
+          if (e.originalEvent.shiftKey) {
             //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670,151.1957&radius=500&types=food&name=cruise&key=YOUR_API_KEY
             //rankby=distance 
             //https://developers.google.com/places/web-service/search
             //api for geocoding:  
-            let layer = e.target;
-            // bring layer to front if not older browser
-            if (!L.Browser.ie && !L.Browser.opera) {
-              layer.bringToFront();
-            }
-            var map = this._map;
-            let lat = _.get(feature, 'geometry.coordinates.1');
-            let lng = _.get(feature, 'geometry.coordinates.0');
-            var latLng = L.latLng(lat, lng);
             var url = "/api/sense/proxy?uri=" + escape("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" + lat + "," + lng + "&rankby=distance&key=AIzaSyCNEMoMEB1daSyHQLLbpUWzURD6RQDuIVw")
             //&radius=500&types=food&name=cruise
+            var minWidth = 500
+            var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
+            //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
+
+            var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>Loading nearby places</h4></td></tr></tbody></table>";
+            //<img src=\"data:image/gif;base64,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\">Loading nearby places</h4></div>"
+            var layerPopup = L.popup(options)
+              .setLatLng(latLng)
+              .setContent(content)
+              .openOn(map);
             $.ajax({
               method: "POST",
               url: url,
@@ -202,12 +224,13 @@ define(function (require) {
                 // for geohash: " + feature.properties.geohash + "/" + feature.properties.aggConfigResult.value + " estimated results
                 //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table class='' width='800px'><th>&nbsp;</th><th>ID</th><th>Index</th>"
                 //var content = "<h4>Showing: " + data.hits.hits.length + " of " + data.hits.total + " results</h4><table width='100%'>"
-                var content = "<h4>Nearby places</h4><table width='100%'>"
-                var fields = ["name", "types"];// "vicinity"
+                var content = "<h4>Nearby establishments, geographic locations, or prominent points of interest</h4><table width='100%'>"
+
+                var fields = [{ "alias": "Place name", "name": "name" }, { "alias": "Types", "name": "types" }];// "vicinity"
 
 
                 for (var i in fields) {
-                  content += "<th>" + fields[i] + "</th>";
+                  content += "<th>" + fields[i].alias + "</th>";
                   //types" : [ "restaurant", "food", "establishment" ],         "vicinity"
                 }
                 //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
@@ -216,19 +239,18 @@ define(function (require) {
                   //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
                   content += "<tr>";
                   for (var i in fields) {
-                    var str = data.results[hit][fields[i]];
+                    var str = data.results[hit][fields[i].name];
                     if (str instanceof Array) str = str.join(", ");
                     content += "<td>" + str + "</td>";
                   }
                   content += "</tr>";
+                  if (hit >= 19) break;
                   //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
                 }
                 content += "</table>"
-                var minWidth = 500
-                var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
-                //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
                 var point = map.latLngToContainerPoint(latLng);
                 var mapSize = map.getSize();
+                //data.results.length
                 var calcHeight = (data.results.length * 25) + 50;
                 var buffer = 10;
                 //if box overlaps right side
@@ -244,30 +266,28 @@ define(function (require) {
                 if (point.y < calcHeight) {
                   point.y = calcHeight + buffer;
                 }
-                latLng = map.containerPointToLatLng(point);
-                layerPopup = L.popup(options)
-                  .setLatLng(latLng)
-                  .setContent(content)
-                  .openOn(map);
+                var adjLatLng = map.containerPointToLatLng(point);
+
+                layerPopup.setLatLng(adjLatLng);
+                //layerPopup.options.maxWidth = 600;
+                //layerPopup.options.maxHeight = 600;    
+                layerPopup.setContent(content);
+                layerPopup.update();
+
               })
               .fail(function (data) {
                 console.log(data);
+              })
+              .always(function () {
+                console.log("complete");
+                map.getContainer().style.cursor = oldMapCursor;
+                document.body.style.cursor = oldBodyCursor;
               });
             return false;
           }
 
-          let layer = e.target;
-          // bring layer to front if not older browser
-          if (!L.Browser.ie && !L.Browser.opera) {
-            layer.bringToFront();
-          }
-          var map = this._map;
-          let lat = _.get(feature, 'geometry.coordinates.1');
-          let lng = _.get(feature, 'geometry.coordinates.0');
-          var latLng = L.latLng(lat, lng);
 
 
-          var url = ""
           //var buffer = map.bufferDistance || "0.1km"
           //metersPerPixel = 40075016.686 * Math.abs(Math.cos(map.getCenter().lat * 180 / Math.PI)) / Math.pow(2, map.getZoom() + 8);
           //buffer = (metersPerPixel * parseFloat(map.bufferDistance)) / 1000 + "km"
@@ -376,14 +396,20 @@ define(function (require) {
             }
           }
           */
+          var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>Loading nearby places</h4></td></tr></tbody></table>";
+          var minWidth = 500
+          var options = { "maxWidth": 800, "minWidth": minWidth, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true }
+          var layerPopup = L.popup(options)
+            .setLatLng(latLng)
+            .setContent(content)
+            .openOn(map);
+
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
           //var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
           var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
           //var url = "http://192.168.99.100:9202/sessions-*/_search";
           //var url = "/api/sense/proxy?uri=http%3A%2F%2F192.168.99.100%3A9202%2Fsessions-*%2F_search";
-
-
           $.ajax({
             method: "POST",
             url: url,
@@ -418,8 +444,6 @@ define(function (require) {
                 //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
               }
               content += "</table>"
-              var minWidth = 500
-              var options = { "maxWidth": 800, "minWidth": minWidth, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true }
               var point = map.latLngToContainerPoint(latLng);
               var mapSize = map.getSize();
               var calcHeight = (data.hits.hits.length * 25) + 50;
@@ -444,19 +468,27 @@ define(function (require) {
               }
               */
               //map.containerPointToLatLng(<Point> point)	LatLng
-              latLng = map.containerPointToLatLng(point);
+              var adjLatLng = map.containerPointToLatLng(point);
+              layerPopup.setLatLng(adjLatLng);
+              //layerPopup.options.maxWidth = 600;
+              //layerPopup.options.maxHeight = 600;    
+              layerPopup.setContent(content);
+              layerPopup.update();
 
-              layerPopup = L.popup(options)
-                .setLatLng(latLng)
-                .setContent(content)
-                .openOn(map);
 
             })
             .fail(function (data) {
               console.log(data);
+            })
+            .always(function () {
+              console.log("complete");
+              map.getContainer().style.cursor = oldMapCursor;
+              document.body.style.cursor = oldBodyCursor;
             });
+
           return false;
         }
+
 
       });
       return false;

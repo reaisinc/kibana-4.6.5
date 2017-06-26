@@ -14,10 +14,10 @@ import MapProvider from 'plugins/enhanced_tilemap/vislib/_map';
 
 define(function (require) {
   var module = require('ui/modules').get('kibana/enhanced_tilemap', ['kibana']);
-  
+
   module.controller('KbnEnhancedTilemapVisController', function ($scope, $rootScope, timefilter, $element, Private, courier, config, getAppState) {
     let aggResponse = Private(require('ui/agg_response/index'));
-    
+
     const queryFilter = Private(require('ui/filter_bar/query_filter'));
     const callbacks = Private(require('plugins/enhanced_tilemap/callbacks'));
     const geoFilter = Private(require('plugins/enhanced_tilemap/vislib/geoFilter'));
@@ -29,7 +29,7 @@ define(function (require) {
     const ResizeChecker = Private(require('ui/vislib/lib/resize_checker'));
     let map = null;
     let collar = null;
-    
+
     appendMap();
     modifyToDsl();
 
@@ -45,19 +45,19 @@ define(function (require) {
 
     const binder = new Binder();
     const resizeChecker = new ResizeChecker($element);
-    binder.on(resizeChecker, 'resize', function() {
+    binder.on(resizeChecker, 'resize', function () {
       resizeArea();
     });
 
     function modifyToDsl() {
       $scope.vis.aggs.origToDsl = $scope.vis.aggs.toDsl;
-      $scope.vis.aggs.toDsl = function() {
+      $scope.vis.aggs.toDsl = function () {
         resizeArea();
         const dsl = $scope.vis.aggs.origToDsl();
-        
+
         //append map collar filter to geohash_grid aggregation
-        _.keys(dsl).forEach(function(key) {
-          if(_.has(dsl[key], "geohash_grid")) {
+        _.keys(dsl).forEach(function (key) {
+          if (_.has(dsl[key], "geohash_grid")) {
             const origAgg = dsl[key];
             origAgg.geohash_grid.precision = utils.getPrecision(map.mapZoom(), config.get('visualization:tileMap:maxPrecision'));
             dsl[key] = {
@@ -74,9 +74,9 @@ define(function (require) {
 
     function aggFilter(field) {
       collar = utils.scaleBounds(
-        map.mapBounds(), 
+        map.mapBounds(),
         $scope.vis.params.collarScale);
-      var filter = {geo_bounding_box: {}};
+      var filter = { geo_bounding_box: {} };
       filter.geo_bounding_box[field] = collar;
       return filter;
     }
@@ -85,15 +85,15 @@ define(function (require) {
     function buildChartData(resp) {
       const aggs = resp.aggregations;
       let numGeoBuckets = 0;
-      _.keys(aggs).forEach(function(key) {
-        if(_.has(aggs[key], "filtered_geohash")) {
+      _.keys(aggs).forEach(function (key) {
+        if (_.has(aggs[key], "filtered_geohash")) {
           aggs[key].buckets = aggs[key].filtered_geohash.buckets;
           delete aggs[key].filtered_geohash;
           numGeoBuckets = aggs[key].buckets.length;
         }
       });
       //console.log("geogrids: " + numGeoBuckets);
-      if(numGeoBuckets === 0) return;
+      if (numGeoBuckets === 0) return;
       var tableGroup = aggResponse.tabify($scope.vis, resp, {
         canSplit: true,
         asAggConfigResults: true
@@ -116,7 +116,7 @@ define(function (require) {
         color: _.get(layerParams, 'color', '#008800'),
         size: _.get(layerParams, 'markerSize', 'm')
       };
-      layer.getLayer(options, function(layer) {
+      layer.getLayer(options, function (layer) {
         map.addPOILayer(layerParams.savedSearchId, layer);
       });
     }
@@ -147,26 +147,198 @@ define(function (require) {
          //do stuff
         map.zoomToFeatures=false;
     })
-
+*/
     $rootScope.$on('autoPanDuringAnimation', function () {
       map.zoomToFeatures=!map.zoomToFeatures;
              //do stuff
     })      
-    */
+    
     /*
     $scope.findNearby=function(lat,lng){
 alert("ok")
     }
     */
+    //$scope.$broadcast('event', { a: item1, b: item2 })
+    //Then access them from the second argument to the callback:
+    $scope.$on('showPopup', function (event, opt) {
+      // access opt.a, opt.b
+      var oldMapCursor = map.map.getContainer().style.cursor;
+      if (oldMapCursor === undefined) {
+        oldMapCursor = 'default';
+      }
+      var oldBodyCursor = document.body.style.cursor;
+      if (oldBodyCursor === undefined) {
+        oldBodyCursor = 'default';
+      }
+
+      map.map.getContainer().style.cursor = 'progress'
+      document.body.style.cursor = 'progress';
+      var minWidth = 500
+      var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
+      var latLng = map.map.getCenter();
+      if(opt.coords)latLng = L.latLng(opt.coords[0],opt.coords[1]);
+      //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
+      var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>"+opt.loading+"</h4></td></tr></tbody></table>";
+
+      var layerPopup = L.popup(options)
+        .setLatLng(latLng)
+        .setContent(content)
+        .openOn(map.map);
+
+      $.getJSON(opt.url)
+        .done(function (json) {
+          //var streetaddress=data.results[0].formatted_address;
+          var data = json.results;//[0].geometry.location;
+          var content = "<h4>" + opt.title + "</h4><table width='100%'>"
+          var fields = opt.fields;["name", "types"];//,"vicinity"
 
 
+          for (var i in fields) {
+            content += "<th>" + fields[i].alias + "</th>";
+            //types" : [ "restaurant", "food", "establishment" ],         "vicinity"
+          }
+          //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+
+          for (var hit in data) {
+            //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+            content += "<tr>";
+            for (var i in fields) {
+              var str;
+              if (fields[i].name instanceof Array) {
+                str = data[hit];//[fields[i]]
+                for (var j in fields[i].name) {
+                  str = str[fields[i].name[j]]
+                  //var str = opt.data[hit][fields[i].name[0]][fields[i].name[1]];
+                }
+              } else {
+                str = data[hit][fields[i].name];
+              }
+
+              if (str instanceof Array) str = str.join(", ");
+              content += "<td>" + str + "</td>";
+            }
+            content += "</tr>";
+            //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
+          }
+          content += "</table>"
+
+          var point = map.map.latLngToContainerPoint(latLng);
+          var mapSize = map.map.getSize();
+          var calcHeight = (data.length * 25) + 50;
+          var buffer = 10;
+          //if box overlaps right side
+          if (point.x > mapSize.x - (minWidth / 2) - buffer) {
+            point.x = mapSize.x - (minWidth / 2) - buffer;
+          }
+          //if box overlaps left side
+          if (point.x < (minWidth / 2)) {
+            //add extra to move past map buttons (zoom in/out, etc)
+            point.x = (minWidth / 2) + (buffer + 40);
+          }
+          //if box overlaps top
+          if (point.y < calcHeight) {
+            point.y = calcHeight + buffer;
+          }
+          var adjLatLng = map.map.containerPointToLatLng(point);
+          layerPopup.setLatLng(adjLatLng);
+          //layerPopup.options.maxWidth = 600;
+          //layerPopup.options.maxHeight = calcHeight;    
+          //layerPopup.setContent(content);
+
+
+          layerPopup.setContent(content)
+          layerPopup.update();
+
+        })
+        .fail(function () {
+          console.log("error");
+        })
+        .always(function () {
+          console.log("complete");
+          map.map.getContainer().style.cursor = oldMapCursor;
+          document.body.style.cursor = oldBodyCursor;
+
+        });
+    });
+
+
+/*
+    $scope.$on('showPopup1', function (event, opt) {
+      // access opt.a, opt.b
+      var oldCursor = map.map.getContainer().style.cursor;
+      if (oldCursor === undefined) {
+        oldCursor = 'default';
+      }
+      map.map.getContainer().style.cursor = 'progress'
+      map.map.getContainer().style.cursor = oldCursor
+      var content = "<h4>" + opt.title + "</h4><table width='100%'>"
+      var fields = opt.fields;["name", "types"];//,"vicinity"
+
+
+      for (var i in fields) {
+        content += "<th>" + fields[i].alias + "</th>";
+        //types" : [ "restaurant", "food", "establishment" ],         "vicinity"
+      }
+      //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+
+      for (var hit in opt.data) {
+        //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+        content += "<tr>";
+        for (var i in fields) {
+          var str;
+          if (fields[i].name instanceof Array) {
+            str = opt.data[hit];//[fields[i]]
+            for (var j in fields[i].name) {
+              str = str[fields[i].name[j]]
+              //var str = opt.data[hit][fields[i].name[0]][fields[i].name[1]];
+            }
+          } else {
+            str = opt.data[hit][fields[i].name];
+          }
+
+          if (str instanceof Array) str = str.join(", ");
+          content += "<td>" + str + "</td>";
+          if (hit >= 19) break;
+        }
+        content += "</tr>";
+        //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
+      }
+      content += "</table>"
+      var minWidth = 500
+      var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
+      //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
+      var latLng = map.map.getCenter();
+      var point = map.map.latLngToContainerPoint(latLng);
+      var mapSize = map.map.getSize();
+      var calcHeight = (opt.data.length * 25) + 50;
+      var buffer = 10;
+      //if box overlaps right side
+      if (point.x > mapSize.x - (minWidth / 2) - buffer) {
+        point.x = mapSize.x - (minWidth / 2) - buffer;
+      }
+      //if box overlaps left side
+      if (point.x < (minWidth / 2)) {
+        //add extra to move past map buttons (zoom in/out, etc)
+        point.x = (minWidth / 2) + (buffer + 40);
+      }
+      //if box overlaps top
+      if (point.y < calcHeight) {
+        point.y = calcHeight + buffer;
+      }
+      latLng = map.map.containerPointToLatLng(point);
+      layerPopup = L.popup(options)
+        .setLatLng(latLng)
+        .setContent(content)
+        .openOn(map.map);
+    });
+*/
     $scope.$watch('esResponse', function (resp) {
-      if(resp) {
+      if (resp) {
         /*
          * 'apply changes' creates new vis.aggs object
          * Modify toDsl function and refetch data.
-         */ 
-        if(!_.has($scope.vis.aggs, "origToDsl")) {
+         */
+        if (!_.has($scope.vis.aggs, "origToDsl")) {
           modifyToDsl();
           courier.fetch();
           return;
@@ -181,7 +353,7 @@ alert("ok")
 
 
         const chartData = buildChartData(resp);
-        if(!chartData) return;
+        if (!chartData) return;
         const geoMinMax = getGeoExtents(chartData);
         chartData.geoJson.properties.allmin = geoMinMax.min;
         chartData.geoJson.properties.allmax = geoMinMax.max;
@@ -195,25 +367,25 @@ alert("ok")
         drawWmsOverlays();
 
         map.addMarkers(
-          chartData, 
+          chartData,
           $scope.vis.params,
           Private(require('ui/agg_response/geo_json/_tooltip_formatter')),
           _.get(chartData, 'valueFormatter', _.identity),
           collar);
 
-        _.filter($scope.vis.params.overlays.savedSearches, function(layerParams) {
+        _.filter($scope.vis.params.overlays.savedSearches, function (layerParams) {
           return layerParams.syncFilters
         }).forEach(function (layerParams) {
           initPOILayer(layerParams);
         });
-        
-        if(map.zoomToFeatures){
+
+        if (map.zoomToFeatures) {
           //need to disable map events temporarily
           //if(pointCount!=map._markers.length)
           //map._disableEvents();
-          map._skipZoomend=true;
-          map._skipMoveend=true;
-          
+          map._skipZoomend = true;
+          map._skipMoveend = true;
+
           map._fitBounds();
           //map._enableEvents();
           //pointCount=map._markers.length;
@@ -222,7 +394,7 @@ alert("ok")
       }
     });
 
-    $scope.$on("$destroy", function() {
+    $scope.$on("$destroy", function () {
       binder.destroy();
       resizeChecker.destroy();
       if (map) map.destroy();
@@ -253,7 +425,7 @@ alert("ok")
       if ($scope.vis.params.overlays.wmsOverlays.length === 0) {
         return;
       }
-      
+
       const source = new courier.SearchSource();
       const appState = getAppState();
       source.set('filter', queryFilter.getFilters());
@@ -265,21 +437,21 @@ alert("ok")
         //remove kibana parts of query
         const cleanedMust = [];
         if (_.has(esQuery, 'filtered.filter.bool.must')) {
-          esQuery.filtered.filter.bool.must.forEach(function(must) {
+          esQuery.filtered.filter.bool.must.forEach(function (must) {
             cleanedMust.push(_.omit(must, ['$state', '$$hashKey']));
           });
         }
         esQuery.filtered.filter.bool.must = cleanedMust;
         const cleanedMustNot = [];
         if (_.has(esQuery, 'filtered.filter.bool.must_not')) {
-          esQuery.filtered.filter.bool.must_not.forEach(function(mustNot) {
+          esQuery.filtered.filter.bool.must_not.forEach(function (mustNot) {
             cleanedMustNot.push(_.omit(mustNot, ['$state', '$$hashKey']));
           });
         }
         esQuery.filtered.filter.bool.must_not = cleanedMustNot;
         const escapedQuery = JSON.stringify(esQuery).replace(new RegExp('[,]', 'g'), '\\,');
 
-        $scope.vis.params.overlays.wmsOverlays.forEach(function(layerParams) {
+        $scope.vis.params.overlays.wmsOverlays.forEach(function (layerParams) {
           const name = _.get(layerParams, 'displayName', layerParams.layers);
           const options = {
             format: 'image/png',

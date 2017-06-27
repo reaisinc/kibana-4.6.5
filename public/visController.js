@@ -167,34 +167,33 @@ define(function (require) {
       var must = []
       var extent = map.map.getBounds();
       var hasGeoFilter = false;
-      if(map.map.esFilters){
-      for(var i in map.map.esFilters)
-      {
-          if(map.map.esFilters[i].geo_bounding_box){
-            hasGeoFilter=true;
+      if (map.map.esFilters) {
+        for (var i in map.map.esFilters) {
+          if (map.map.esFilters[i].geo_bounding_box) {
+            hasGeoFilter = true;
             break;
           }
-      }
+        }
       }
       //OBS!  Use full extent for all searches, unless a geo filter is specified
 
       if (extent && !hasGeoFilter) {
-          var bbox = {
-            "geo_bounding_box": {
-              "geocoordinates": {
-                "top_left": {
-                  "lat": 90,
-                  "lon": -180
-                },
-                "bottom_right": {
-                  "lat": -90,
-                  "lon": 180
-                }
+        var bbox = {
+          "geo_bounding_box": {
+            "geocoordinates": {
+              "top_left": {
+                "lat": 90,
+                "lon": -180
+              },
+              "bottom_right": {
+                "lat": -90,
+                "lon": 180
               }
             }
           }
-          must.push(bbox);
-        
+        }
+        must.push(bbox);
+
         /*
         if (extent._northEast.lat === extent._southWest.lat && map.lastExtent) {
           must.push(map.lastExtent)
@@ -333,11 +332,24 @@ alert("ok")
       var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
       var latLng = map.map.getCenter();
       if (opt.coords) latLng = L.latLng(opt.coords[0], opt.coords[1]);
+      var point = map.map.latLngToContainerPoint(latLng);
+      var mapSize = map.map.getSize();
+      var buffer = 10;
+      //if box overlaps right side
+      if (point.x > mapSize.x - (minWidth / 2) - buffer) {
+        point.x = mapSize.x - (minWidth / 2) - buffer;
+      }
+      //if box overlaps left side
+      if (point.x < (minWidth / 2)) {
+        //add extra to move past map buttons (zoom in/out, etc)
+        point.x = (minWidth / 2) + (buffer + 40);
+      }
+      var adjLatLng = map.map.containerPointToLatLng(point);
       //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
       var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>" + opt.loading + "</h4></td></tr></tbody></table>";
 
       var layerPopup = L.popup(options)
-        .setLatLng(latLng)
+        .setLatLng(adjLatLng)
         .setContent(content)
         .openOn(map.map);
 
@@ -347,7 +359,6 @@ alert("ok")
           var data = json.results;//[0].geometry.location;
           var content = "<h4>" + opt.title + "</h4><table width='100%'>"
           var fields = opt.fields;["name", "types"];//,"vicinity"
-
 
           for (var i in fields) {
             content += "<th>" + fields[i].alias + "</th>";
@@ -378,19 +389,8 @@ alert("ok")
           }
           content += "</table>"
 
-          var point = map.map.latLngToContainerPoint(latLng);
-          var mapSize = map.map.getSize();
           var calcHeight = (data.length * 25) + 50;
-          var buffer = 10;
-          //if box overlaps right side
-          if (point.x > mapSize.x - (minWidth / 2) - buffer) {
-            point.x = mapSize.x - (minWidth / 2) - buffer;
-          }
-          //if box overlaps left side
-          if (point.x < (minWidth / 2)) {
-            //add extra to move past map buttons (zoom in/out, etc)
-            point.x = (minWidth / 2) + (buffer + 40);
-          }
+
           //if box overlaps top
           if (point.y < calcHeight) {
             point.y = calcHeight + buffer;

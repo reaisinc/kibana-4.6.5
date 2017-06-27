@@ -17,6 +17,7 @@ define(function (require) {
       this.geoJson = geoJson;
       this.layerControl = layerControl;
       this.popups = [];
+      this.layerPopup=null;
 
       this._tooltipFormatter = params.tooltipFormatter || _.identity;
       this._valueFormatter = params.valueFormatter || _.identity;
@@ -114,6 +115,25 @@ define(function (require) {
       let self = this;
 
       let popup = layer.on({
+        mouseover: function (e) {
+          //added sah don't show tooltip when popup is open
+          if(self.layerPopup && self.layerPopup._isOpen){
+            return;
+          }
+          let layer = e.target;
+          // bring layer to front if not older browser
+          if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+          }
+          self._showTooltip(feature);
+          //marker.bindTooltip("my tooltip text").openTooltip();
+        },
+        mouseout: function (e) {
+          if(self.layerPopup && self.layerPopup._isOpen){
+            return;
+          }
+          self._hidePopup();
+        },
         //right mouse click
         contextmenu: function (e) {
           let layer = e.target;
@@ -137,7 +157,7 @@ define(function (require) {
               }
             }
             */
-            this._map.fire('setfilter:mouseClick', { bounds: bounds, clearAll:true });
+            this._map.fire('setfilter:mouseClick', { bounds: bounds, clearAll: true });
           }
           return false;
 
@@ -230,7 +250,7 @@ define(function (require) {
               point.x = (minWidth / 2) + (buffer + 40);
             }
             var adjLatLng = map.containerPointToLatLng(point);
-            var layerPopup = L.popup(options)
+            self.layerPopup = L.popup(options)
               .setLatLng(adjLatLng)
               .setContent(content)
               .openOn(map);
@@ -281,11 +301,11 @@ define(function (require) {
                 }
                 var adjLatLng = map.containerPointToLatLng(point);
 
-                layerPopup.setLatLng(adjLatLng);
+                self.layerPopup.setLatLng(adjLatLng);
                 //layerPopup.options.maxWidth = 600;
                 //layerPopup.options.maxHeight = 600;    
-                layerPopup.setContent(content);
-                layerPopup.update();
+                self.layerPopup.setContent(content);
+                self.layerPopup.update();
 
               })
               .fail(function (data) {
@@ -426,7 +446,7 @@ define(function (require) {
             point.x = (minWidth / 2) + (buffer + 40);
           }
           var adjLatLng = map.containerPointToLatLng(point);
-          var layerPopup = L.popup(options)
+          self.layerPopup = L.popup(options)
             .setLatLng(adjLatLng)
             .setContent(content)
             .openOn(map);
@@ -485,11 +505,11 @@ define(function (require) {
               */
               //map.containerPointToLatLng(<Point> point)	LatLng
               var adjLatLng = map.containerPointToLatLng(point);
-              layerPopup.setLatLng(adjLatLng);
+              self.layerPopup.setLatLng(adjLatLng);
               //layerPopup.options.maxWidth = 600;
               //layerPopup.options.maxHeight = 600;    
-              layerPopup.setContent(content);
-              layerPopup.update();
+              self.layerPopup.setContent(content);
+              self.layerPopup.update();
 
 
             })
@@ -663,7 +683,9 @@ define(function (require) {
       let lng = _.get(feature, 'geometry.coordinates.0');
       latLng = latLng || L.latLng(lat, lng);
 
-      let content = this._tooltipFormatter(feature);
+      //let content = this._tooltipFormatter(feature);
+      
+      let content = "<table><tbody><tr><td><b>Total points</b></td><td>"+feature.properties.value+"</td></tr></tbody></table>"
 
       if (!content) return;
       this._createTooltip(content, latLng);

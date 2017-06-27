@@ -137,7 +137,7 @@ define(function (require) {
               }
             }
             */
-            this._map.fire('setfilter:mouseClick', { bounds: bounds });
+            this._map.fire('setfilter:mouseClick', { bounds: bounds, clearAll:true });
           }
           return false;
 

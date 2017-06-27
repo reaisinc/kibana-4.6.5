@@ -137,6 +137,10 @@ define(function (require) {
           newFilter = {geo_bounding_box: {}};
           newFilter.geo_bounding_box[field] = event.bounds;
         }
+        //added sah
+        if(event.clearAll){
+          geoFilter.clearGeoFilters();
+        }
 
         geoFilter.add(newFilter, field, indexPatternName);
       }

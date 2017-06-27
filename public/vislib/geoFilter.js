@@ -135,6 +135,18 @@ define(function (require) {
       });
       return filters;
     }
+    //added sah clear all geo filters
+    function clearGeoFilters(){
+
+      _.flatten([queryFilter.getAppFilters(), queryFilter.getGlobalFilters()]).forEach(function (it) {
+        if (isGeoFilter(it, field) && !_.get(it, 'meta.disabled', false)) {
+          queryFilter.removeFilter(it);
+          //const features = toVector(it, field);
+          //filters = filters.concat(features);
+        }
+      });
+      
+    }
 
     function isGeoFilter(filter, field) {
       if (filter.meta.key === field
@@ -155,6 +167,7 @@ define(function (require) {
     return {
       add: addGeoFilter,
       isGeoFilter: isGeoFilter,
+      clearGeoFilters:clearGeoFilters,//added sah
       getGeoFilters: getGeoFilters
     }
   }

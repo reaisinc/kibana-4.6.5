@@ -139,7 +139,7 @@ define(function (require) {
         }
         //added sah
         if(event.e.clearAll){
-          geoFilter.clearGeoFilters();
+          geoFilter.clearGeoFilters("geocoordinates");
         }
 
         geoFilter.add(newFilter, field, indexPatternName);

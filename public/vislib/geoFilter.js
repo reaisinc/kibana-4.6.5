@@ -5,7 +5,7 @@ define(function (require) {
   return function GeoFilterFactory(Private) {
     const _ = require('lodash');
     const queryFilter = Private(require('ui/filter_bar/query_filter'));
-    
+
     function filterAlias(field, numBoxes) {
       return field + ": " + numBoxes + " geo filters"
     }
@@ -25,17 +25,17 @@ define(function (require) {
           geoFilters = geoFilters.concat(existingFilter.or);
           type = 'or';
         } else if (_.has(existingFilter, 'geo_bounding_box')) {
-          geoFilters.push({geo_bounding_box: existingFilter.geo_bounding_box});
+          geoFilters.push({ geo_bounding_box: existingFilter.geo_bounding_box });
           type = 'geo_bounding_box';
         } else if (_.has(existingFilter, 'geo_polygon')) {
-          geoFilters.push({geo_polygon: existingFilter.geo_polygon});
+          geoFilters.push({ geo_polygon: existingFilter.geo_polygon });
           type = 'geo_polygon';
         } else if (_.has(existingFilter, 'geo_shape')) {
-          geoFilters.push({geo_shape: existingFilter.geo_shape});
+          geoFilters.push({ geo_shape: existingFilter.geo_shape });
           type = 'geo_shape';
         }
         queryFilter.updateFilter({
-          model: { or : geoFilters },
+          model: { or: geoFilters },
           source: existingFilter,
           type: type,
           alias: filterAlias(field, geoFilters.length)
@@ -47,10 +47,10 @@ define(function (require) {
           newFilter = { or: newFilter };
         }
         newFilter.meta = {
-          alias: filterAlias(field, numFilters), 
-          negate: false, 
-          index: indexPatternName, 
-          key: field 
+          alias: filterAlias(field, numFilters),
+          negate: false,
+          index: indexPatternName,
+          key: field
         };
         queryFilter.addFilters(newFilter);
       }
@@ -67,15 +67,15 @@ define(function (require) {
     function toVector(filter, field) {
       let features = [];
       if (_.has(filter, 'or')) {
-        _.get(filter, 'or', []).forEach(function(it) {
+        _.get(filter, 'or', []).forEach(function (it) {
           features = features.concat(toVector(it, field));
         });
       } else if (_.has(filter, 'geo_bounding_box.' + field)) {
         const topLeft = _.get(filter, 'geo_bounding_box.' + field + '.top_left');
         const bottomRight = _.get(filter, 'geo_bounding_box.' + field + '.bottom_right');
-        if(topLeft && bottomRight) {
+        if (topLeft && bottomRight) {
           const bounds = L.latLngBounds(
-            [topLeft.lat, topLeft.lon], 
+            [topLeft.lat, topLeft.lon],
             [bottomRight.lat, bottomRight.lon]);
           features.push(L.rectangle(bounds));
         }
@@ -86,18 +86,18 @@ define(function (require) {
           distance = parseFloat(distance_str.replace('km', '')) * 1000;
         }
         const center = _.get(filter, 'geo_distance.' + field);
-        if(center) {
+        if (center) {
           features.push(L.circle([center.lat, center.lon], distance));
         }
       } else if (_.has(filter, 'geo_polygon.' + field)) {
         const points = _.get(filter, 'geo_polygon.' + field + '.points', []);
         const latLngs = [];
-        points.forEach(function(point) {
+        points.forEach(function (point) {
           const lat = point[LAT_INDEX];
           const lon = point[LON_INDEX];
           latLngs.push(L.latLng(lat, lon));
         });
-        if(latLngs.length > 0) 
+        if (latLngs.length > 0)
           features.push(L.polygon(latLngs));
       } else if (_.has(filter, 'geo_shape.' + field)) {
         const type = _.get(filter, 'geo_shape.' + field + '.shape.type');
@@ -106,13 +106,13 @@ define(function (require) {
           const tl = envelope[0]; //topleft
           const br = envelope[1]; //bottomright
           const bounds = L.latLngBounds(
-            [tl[LAT_INDEX], tl[LON_INDEX]], 
+            [tl[LAT_INDEX], tl[LON_INDEX]],
             [br[LAT_INDEX], br[LON_INDEX]]);
           features.push(L.rectangle(bounds));
         } else if (type.toLowerCase() === 'polygon') {
           coords = _.get(filter, 'geo_shape.' + field + '.shape.coordinates')[0];
           const latLngs = [];
-          coords.forEach(function(point) {
+          coords.forEach(function (point) {
             const lat = point[LAT_INDEX];
             const lon = point[LON_INDEX];
             latLngs.push(L.latLng(lat, lon));
@@ -136,16 +136,18 @@ define(function (require) {
       return filters;
     }
     //added sah clear all geo filters
-    function clearGeoFilters(){
+    function clearGeoFilters(field) {
 
       _.flatten([queryFilter.getAppFilters(), queryFilter.getGlobalFilters()]).forEach(function (it) {
-        if (isGeoFilter(it, field) && !_.get(it, 'meta.disabled', false)) {
-          queryFilter.removeFilter(it);
+        //for (field in it.or) {
+          if (isGeoFilter(it, field) && !_.get(it, 'meta.disabled', false)) {
+            queryFilter.removeFilter(it);
+          }
           //const features = toVector(it, field);
           //filters = filters.concat(features);
-        }
+        //}
       });
-      
+
     }
 
     function isGeoFilter(filter, field) {
@@ -167,7 +169,7 @@ define(function (require) {
     return {
       add: addGeoFilter,
       isGeoFilter: isGeoFilter,
-      clearGeoFilters:clearGeoFilters,//added sah
+      clearGeoFilters: clearGeoFilters,//added sah
       getGeoFilters: getGeoFilters
     }
   }

@@ -20,8 +20,9 @@ git pull origin master
 
 ```
 edit config/kibana.yml and add:
-
+ ```bash
 elasticsearch.url: "http://192.168.99.100:9202"
+
 tilemap.options.maxZoom: 18
 tilemap.url: http://a.tile.openstreetmap.org/{z}/{x}/{y}.png
 http.cors.allow-origin: "*"
@@ -29,7 +30,7 @@ http.cors.enabled: true
 
 sense.proxyFilter:
     ^https?://(192\.168\.99\.100:9202|maps\.googleapis\.com|localhost|127\.0\.0\.1|\[::0\]).*
-
+```
 # Compatibility
 The plugin is compatible with following Versions (other not tested yet):
 * kibana (=4.6.5)

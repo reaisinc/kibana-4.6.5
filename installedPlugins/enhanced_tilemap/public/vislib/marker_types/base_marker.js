@@ -329,7 +329,8 @@ define(function (require) {
           var from = typeof (map.timeRange.from) == "string" ? new Date(map.timeRange.from).getTime() : map.timeRange.from.toDate().getTime()
           var to = typeof (map.timeRange.to) == "string" ? new Date(map.timeRange.to).getTime() : map.timeRange.to.toDate().getTime()
           var fields = ["asl", "ipDst", "ipSrc"]
-          var fields = ["user_id", "speed", "heading", "altitude", "location_timestamp"]
+          var fieldsArr = ["user_id", "speed", "heading", "altitude", "location_timestamp"]
+          var fields = [{"alias":"User ID","name":"user_id"}, {"alias":"Speed","name":"speed"}, {"alias":"Heading","name":"heading"}, {"alias":"Altitude","name":"altitude"}, {"alias":"Location timestamp","name":"location_timestamp"}]
           if (map.popupFields) {
             fields = map.popupFields.split(",");
           }
@@ -377,7 +378,7 @@ define(function (require) {
 
           //feature.properties.geohash
           var query = {
-            "_source": fields,
+            "_source": fieldsArr,
             "query":
             {
               "filtered":
@@ -477,7 +478,7 @@ define(function (require) {
 
               //<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               for (var i in fields) {
-                content += "<th>" + fields[i] + "</th>";
+                content += "<th>" + fields[i].alias + "</th>";
               }
               //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
 
@@ -485,7 +486,11 @@ define(function (require) {
                 //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
                 content += "<tr>";
                 for (var i in fields) {
-                  content += "<td>" + data.hits.hits[hit]._source[fields[i]] + "</td>";
+                  if(fields[i].name=="location_timestamp"){
+                    var d = new Date(data.hits.hits[hit]._source[fields[i].name])
+                    data.hits.hits[hit]._source[fields[i].name] = d.toDateString() + ' ' + d.toLocaleTimeString()
+                  }
+                  content += "<td>" + data.hits.hits[hit]._source[fields[i].name] + "</td>";
                 }
                 content += "</tr>";
                 //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"

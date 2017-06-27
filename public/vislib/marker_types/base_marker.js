@@ -128,7 +128,7 @@ define(function (require) {
             }
             //must.push(bbox);
             //note:  need to remove any geofilters??
-
+            /*
             if (this._map.esFilters) {
               for (var i = 0; i < this._map.esFilters.length; i++) {
                 if (this._map.esFilters[i].geo_bounding_box) {
@@ -136,6 +136,7 @@ define(function (require) {
                 }
               }
             }
+            */
             this._map.fire('setfilter:mouseClick', { bounds: bounds });
           }
           return false;

@@ -373,6 +373,10 @@ define(function (require) {
     TileMapMap.prototype.setFilters = function (filters) {
       this.map.esFilters = filters;
     };
+    //added sah to save filters
+    TileMapMap.prototype.getFilters = function () {
+      return this._filters;
+    };
     //added sah to save zoom to features
     TileMapMap.prototype.setZoomToFeatures = function (flag) {
       this.map.zoomToFeatures = flag;
@@ -458,49 +462,49 @@ map.keyboard.enable();
 if (map.tap) map.tap.enable();
 document.getElementById('map').style.cursor='grab';
 */
-/*
-ng-click="$emit('customEvent')"
-Then in your controller you can use
-$rootScope.$on('customEvent', function(){
-    // do something
-})
-or
-$rootScope.$broadcast('buttonPressedEvent');
-And receive it like this:
-$rootScope.$on('buttonPressedEvent', function () {
-             //do stuff
-        })
-*/
+    /*
+    ng-click="$emit('customEvent')"
+    Then in your controller you can use
+    $rootScope.$on('customEvent', function(){
+        // do something
+    })
+    or
+    $rootScope.$broadcast('buttonPressedEvent');
+    And receive it like this:
+    $rootScope.$on('buttonPressedEvent', function () {
+                 //do stuff
+            })
+    */
     //added sah to enable all map events
-/*    
-    TileMapMap.prototype._enableEvents = function () {
-      this.map._handlers.forEach(function (handler) {
-        handler.enable();
-      });
-      this.map.dragging.enable();
-      this.map.touchZoom.enable();
-      this.map.doubleClickZoom.enable();
-      this.map.scrollWheelZoom.enable();
-      this.map.boxZoom.enable();
-      this.map.keyboard.enable();
-      if (this.map.tap) this.map.tap.enable();
-
-    }
-    //added sah to disable all map events
-    TileMapMap.prototype._disableEvents = function () {
-      this.map._handlers.forEach(function (handler) {
-        handler.disable();
-      });
-      this.map.dragging.disable();
-      this.map.touchZoom.disable();
-      this.map.doubleClickZoom.disable();
-      this.map.scrollWheelZoom.disable();
-      this.map.boxZoom.disable();
-      this.map.keyboard.disable();
-      if (this.map.tap) this.map.tap.disable();
-
-    }
-*/
+    /*    
+        TileMapMap.prototype._enableEvents = function () {
+          this.map._handlers.forEach(function (handler) {
+            handler.enable();
+          });
+          this.map.dragging.enable();
+          this.map.touchZoom.enable();
+          this.map.doubleClickZoom.enable();
+          this.map.scrollWheelZoom.enable();
+          this.map.boxZoom.enable();
+          this.map.keyboard.enable();
+          if (this.map.tap) this.map.tap.enable();
+    
+        }
+        //added sah to disable all map events
+        TileMapMap.prototype._disableEvents = function () {
+          this.map._handlers.forEach(function (handler) {
+            handler.disable();
+          });
+          this.map.dragging.disable();
+          this.map.touchZoom.disable();
+          this.map.doubleClickZoom.disable();
+          this.map.scrollWheelZoom.disable();
+          this.map.boxZoom.disable();
+          this.map.keyboard.disable();
+          if (this.map.tap) this.map.tap.disable();
+    
+        }
+    */
     TileMapMap.prototype._attachEvents = function () {
       var self = this;
 
@@ -508,9 +512,9 @@ $rootScope.$on('buttonPressedEvent', function () {
         if (!self.map) return;
         if (self._hasSameLocation()) return;
         //added sah to skip refresh during map animation
-        if(self._skipZoomend||self._skipMoveend){
-        	self._skipMoveend=false;
-        	//return;
+        if (self._skipZoomend || self._skipMoveend) {
+          self._skipMoveend = false;
+          //return;
         }
 
         // update internal center and zoom references
@@ -530,6 +534,15 @@ $rootScope.$on('buttonPressedEvent', function () {
       //added sah
       this.map.on('setfilter:mouseClick', function (e) {
         var bounds = _.get(e, 'bounds')
+        //need to remove all the geo filters
+        var isVisible=false;
+        if (this._filters) {
+          if (this.map.hasLayer(this._filters)) {
+            isVisible = true;
+          }
+          this._layerControl.removeLayer(this._filters);
+          this.map.removeLayer(this._filters);
+        }
         self._callbacks.rectangle({
           e: e,
           chart: self._chartData,
@@ -615,11 +628,11 @@ $rootScope.$on('buttonPressedEvent', function () {
         if (self._hasSameLocation()) return;
         if (!self._callbacks) return;
         //added sah to skip refresh during map animation
-        if(self._skipZoomend||self._skipMoveend){
-        	self._skipZoomend=false;
-        	//return;
+        if (self._skipZoomend || self._skipMoveend) {
+          self._skipZoomend = false;
+          //return;
         }
-        
+
         self._callbacks.mapZoomEnd({
           chart: self._chartData,
           map: self.map,
@@ -713,14 +726,14 @@ $rootScope.$on('buttonPressedEvent', function () {
     };
     //added sah
     TileMapMap.prototype._fitCoordsX = function (lng) {
-      if(lng < -180)lng=-180;
-      if(lng > 180)lng=180;
+      if (lng < -180) lng = -180;
+      if (lng > 180) lng = 180;
       return lng;
     };
     //added sah
     TileMapMap.prototype._fitCoordsY = function (lat) {
-      if(lat>90)lat=90;
-      if(lat<-90)lat=-90;
+      if (lat > 90) lat = 90;
+      if (lat < -90) lat = -90;
       return lat;
     };
 

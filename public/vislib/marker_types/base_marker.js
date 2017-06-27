@@ -129,10 +129,10 @@ define(function (require) {
             //must.push(bbox);
             //note:  need to remove any geofilters??
 
-            if (map.esFilters) {
-              for (var i = 0; i < map.esFilters.length; i++) {
-                if (map.esFilters[i].geo_bounding_box) {
-                  map.esFilters.splice(i, 1);
+            if (this._map.esFilters) {
+              for (var i = 0; i < this._map.esFilters.length; i++) {
+                if (this._map.esFilters[i].geo_bounding_box) {
+                  this._map.esFilters.splice(i, 1);
                 }
               }
             }

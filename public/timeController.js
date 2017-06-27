@@ -25,7 +25,9 @@ module.config(function($httpProvider) {
   
   module.controller('KbnTimeVisController', function (quickRanges, timeUnits, $scope, $rootScope, Private, $filter, $timeout) {
     const TIMESLIDER_INSTR = "Click and drag to select a time range."
-    const DATE_FORMAT = 'MMMM Do YYYY, HH:mm:ss z';
+    //const DATE_FORMAT = 'MMMM Do YYYY, HH:mm:ss z';
+    const DATE_FORMAT = 'LLL';
+    //added sah configurable delay
     $rootScope.$$timefilter.animation_frame_delay = _.get($scope.vis.params, 'animation_frame_delay', 1) * 1000 || 3000;
     $rootScope.plugin = {
       timePlugin: {}
@@ -63,9 +65,9 @@ module.config(function($httpProvider) {
       preview: undefined,
       round: false
     };
+    //added sah toggle map animation
     $scope.animate=false;
-    //$rootScope.$$timefilter.animate=;
-    
+        
     $scope.sliderRoundOptions = [
       {text: 'Second', value: 's'},
       {text: 'Minute', value: 'm'},
@@ -226,6 +228,7 @@ module.config(function($httpProvider) {
         snapToNearest: $scope.slider.roundUnit
       });
     }
+    //added sah set animation toggle
     function setAnimation() {
       $rootScope.$$timefilter.animate = !$rootScope.$$timefilter.animate;
       //$rootScope.$$timefilter.animate=;
@@ -233,6 +236,7 @@ module.config(function($httpProvider) {
       $rootScope.$broadcast('autoPanDuringAnimation');
     }
     $scope.setAnimation = setAnimation;
+
     function updateKbnTime() {
       $rootScope.$$timefilter.time.from = expectedFrom;
       $rootScope.$$timefilter.time.to = expectedTo;

@@ -60,6 +60,7 @@ angular.module('BootstrapAddons')
             nextStart = new Date(scope.end.getTime() - getBrushSize());
             nextStop = scope.end;
           }
+          //added sah.  intercept step when animating map so you can retrieve the query bbox first, zoom to it, then run query again
           if (scope.$root.$$timefilter.animate) {
             //get bounding box, then select
             var snappedExtent = snappedExent([nextStart, nextStop])
@@ -75,6 +76,7 @@ angular.module('BootstrapAddons')
             nextStart = scope.start;
             nextStop = new Date(scope.start.getTime() + getBrushSize());
           }
+          //added sah.  intercept step when animating map so you can retrieve the query bbox first, zoom to it, then run query again
           if (scope.$root.$$timefilter.animate) {
             var snappedExtent = snappedExent([nextStart, nextStop])
             scope.$root.$broadcast('getQueryMapExtent',{"nextStart":snappedExtent[0],"nextStop":snappedExtent[1]});

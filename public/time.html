@@ -25,9 +25,9 @@
 
         <label style="margin-left:10px">
                 <input
-                  ng-model="relative.round"
-                  ng-checked="relative.round"
-                  ng-change="$emit('autoPanDuringAnimation')"
+                  ng-model="animate"
+                  ng-checked="animate"
+                  ng-change="setAnimation()"
                   type="checkbox">
                 Animate map
               </label>

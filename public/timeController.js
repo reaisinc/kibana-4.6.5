@@ -63,6 +63,9 @@ module.config(function($httpProvider) {
       preview: undefined,
       round: false
     };
+    $scope.animate=false;
+    //$rootScope.$$timefilter.animate=;
+    
     $scope.sliderRoundOptions = [
       {text: 'Second', value: 's'},
       {text: 'Minute', value: 'm'},
@@ -223,7 +226,13 @@ module.config(function($httpProvider) {
         snapToNearest: $scope.slider.roundUnit
       });
     }
-
+    function setAnimation() {
+      $rootScope.$$timefilter.animate = !$rootScope.$$timefilter.animate;
+      //$rootScope.$$timefilter.animate=;
+      //$emit('autoPanDuringAnimation')
+      $rootScope.$broadcast('autoPanDuringAnimation');
+    }
+    $scope.setAnimation = setAnimation;
     function updateKbnTime() {
       $rootScope.$$timefilter.time.from = expectedFrom;
       $rootScope.$$timefilter.time.to = expectedTo;

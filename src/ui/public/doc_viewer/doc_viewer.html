@@ -1,0 +1,126 @@
+
+<div class="doc-viewer">
+  <ul class="nav nav-tabs">
+    <li ng-class="{active: mode == 'table'}"><a ng-click="mode='table'">Table</a></li>
+    <li ng-class="{active: mode == 'json'}"><a ng-click="mode='json'">JSON</a></li>
+  </ul>
+  <!--
+  <a ng-click="saveTable()" style="display:inline;float:right">Save changes</a>
+  -->
+ 
+  <div class="doc-viewer-content">
+    <table class="table table-condensed" ng-show="mode == 'table'">
+      <tbody>
+      	
+        <tr ng-repeat="field in fields" ng-style="{'background-color': colors[field]}">
+          <td field-name="field"
+              field-type="mapping[field].type"
+              width="1%"
+              class="doc-viewer-field">
+          </td>
+          <td width="1%" class="doc-viewer-buttons" ng-if="filter">
+            <span ng-if="mapping[field].filterable">
+              <i ng-click="filter(mapping[field], flattened[field], '+')"
+                tooltip="Filter for value"
+                tooltip-append-to-body="1"
+                class="fa fa-search-plus"></i>
+              <i ng-click="filter(mapping[field], flattened[field],'-')"
+                tooltip="Filter out value"
+                tooltip-append-to-body="1"
+                class="fa fa-search-minus"></i>
+            </span>
+            <span ng-if="!mapping[field].filterable" tooltip="Unindexed fields can not be searched">
+              <i class="fa fa-search-plus text-muted"></i>
+              <i class="fa fa-search-minus text-muted"></i>
+            </span>
+            <span ng-if="columns">
+              <i ng-click="toggleColumn(field)"
+                tooltip="Toggle column in table"
+                tooltip-append-to-body="1"
+                class="fa fa-columns"></i>
+            </span>
+          </td>
+
+          <td>
+            <i ng-if="!mapping[field] && field[0] === '_'"
+              tooltip-placement="top"
+              tooltip="Field names beginning with _ are not supported"
+              class="fa fa-warning text-color-warning ng-scope doc-viewer-underscore"></i>
+            <i ng-if="!mapping[field] && field[0] !== '_' && !showArrayInObjectsWarning(doc, field)"
+              tooltip-placement="top"
+              tooltip="No cached mapping for this field. Refresh field list from the Settings > Indices page"
+              class="fa fa-warning text-color-warning ng-scope doc-viewer-no-mapping"></i>
+            <i ng-if="showArrayInObjectsWarning(doc, field)"
+              tooltip-placement="top"
+              tooltip="Objects in arrays are not well supported."
+              class="fa fa-warning text-color-warning ng-scope doc-viewer-object-array"></i>
+            <!-- added sah -->
+            <i ng-if="field.charAt(0)!=='_' && field.charAt(0)!=='@'"
+              tooltip-placement="top"
+              tooltip="Edit field value"
+              ng-click="editColumn($index)"
+              class="ng-scope">
+              <ng-md-icon icon="mode_edit" size="16" style="fill: #b4bcc2"> <!-- #2196F3 -->
+            	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path></svg>
+            	</ng-md-icon>
+            </i>
+            <!--https://s.codepen.io/boomerang/iFrameKey-ec7d95fd-7787-77cc-cad6-e7dfc9d306b8/index.html#-->
+            <i ng-if="mapping[field].type=='geo_point'  && typeof(formatted[field]) !== 'undefined' && formatted[field].length>0"
+              tooltip-placement="top"
+              tooltip="Reverse geocode"
+              ng-click="reverseGeocodeColumn($index)"              
+              class="ng-scope">
+              <ng-md-icon icon="mode_edit" size="16" style="fill: #b4bcc2">
+            	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+            		<path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm-1.56 10H9v-1.44l3.35-3.34 1.43 1.43L10.44 12zm4.45-4.45l-.7.7-1.44-1.44.7-.7c.15-.15.39-.15.54 0l.9.9c.15.15.15.39 0 .54z"/>
+            	</svg>
+            		
+            	</ng-md-icon>
+            </i>
+            <i ng-if="field.indexOf('address_string')!=-1 && typeof(formatted[field]) !== 'undefined' && formatted[field].length>0"
+              tooltip-placement="top"
+              tooltip="Geocode"
+              ng-click="geocodeColumn($index)"
+              class="ng-scope">
+              <ng-md-icon icon="mode_edit" size="16" style="fill: #b4bcc2">
+            	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+            		<path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+            	</svg>
+            	</ng-md-icon>
+            </i>
+
+            <div class="doc-viewer-value" ng-bind-html="typeof(formatted[field]) === 'undefined' ? hit[field] : formatted[field] | trustAsHtml"></div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+<!--
+<div tabindex="-1" role="dialog" class="modal fade" ng-class="{in: animate}" ng-style="{'z-index': 1050 + index*10, display: 'block'}" ng-click="close($event)">
+    <div class="modal-dialog" ng-class="{'modal-sm': size == 'sm', 'modal-lg': size == 'lg'}">
+    	<div class="modal-content" modal-transclude>
+    		lots of content here
+    	</div>
+    </div>
+</div>
+-->
+
+    <div
+      id="json-ace"
+      ng-show="mode == 'json'"
+      ng-model="hitJson"
+      readonly
+      ui-ace="{
+        useWrapMode: true,
+        onLoad: aceLoaded,
+        advanced: {
+          highlightActiveLine: false
+        },
+        rendererOptions: {
+          showPrintMargin: false,
+          maxLines: 4294967296
+        },
+        mode: 'json'
+      }"></div>
+  </div>
+</div>

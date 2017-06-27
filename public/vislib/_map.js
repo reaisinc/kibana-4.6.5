@@ -472,6 +472,7 @@ $rootScope.$on('buttonPressedEvent', function () {
         })
 */
     //added sah to enable all map events
+/*    
     TileMapMap.prototype._enableEvents = function () {
       this.map._handlers.forEach(function (handler) {
         handler.enable();
@@ -499,7 +500,7 @@ $rootScope.$on('buttonPressedEvent', function () {
       if (this.map.tap) this.map.tap.disable();
 
     }
-
+*/
     TileMapMap.prototype._attachEvents = function () {
       var self = this;
 
@@ -509,7 +510,7 @@ $rootScope.$on('buttonPressedEvent', function () {
         //added sah to skip refresh during map animation
         if(self._skipZoomend||self._skipMoveend){
         	self._skipMoveend=false;
-        	return;
+        	//return;
         }
 
         // update internal center and zoom references
@@ -616,7 +617,7 @@ $rootScope.$on('buttonPressedEvent', function () {
         //added sah to skip refresh during map animation
         if(self._skipZoomend||self._skipMoveend){
         	self._skipZoomend=false;
-        	return;
+        	//return;
         }
         
         self._callbacks.mapZoomEnd({
@@ -710,6 +711,19 @@ $rootScope.$on('buttonPressedEvent', function () {
       if (!this._geoJson) return [];
       return _.pluck(this._geoJson.features, 'properties.rectangle');
     };
+    //added sah
+    TileMapMap.prototype._fitCoordsX = function (lng) {
+      if(lng < -180)lng=-180;
+      if(lng > 180)lng=180;
+      return lng;
+    };
+    //added sah
+    TileMapMap.prototype._fitCoordsY = function (lat) {
+      if(lat>90)lat=90;
+      if(lat<-90)lat=-90;
+      return lat;
+    };
+
 
     return TileMapMap;
   };

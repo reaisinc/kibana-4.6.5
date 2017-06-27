@@ -149,10 +149,166 @@ define(function (require) {
     })
 */
     $rootScope.$on('autoPanDuringAnimation', function () {
-      map.zoomToFeatures=!map.zoomToFeatures;
-             //do stuff
-    })      
-    
+      map.zoomToFeatures = !map.zoomToFeatures;
+      //do stuff
+    })
+
+    //added sah intercept animated queries to find the min bbox of results, set as extent, then run again to get the hits
+    $rootScope.$on('getQueryMapExtent', function (event, data) {
+      //map.zoomToFeatures = !map.zoomToFeatures;
+      //       scope.$on('timesliderSelect', function (event,data) {
+      //   select(data.nextStart, data.nextStop);
+      // });
+      var snappedExtent = data;
+      //set filter for timestamp
+      var filters = queryFilter.getFilters(); // returns array of **pinned** filters
+      var from = new Date(data.nextStart).getTime();
+      var to = new Date(data.nextStop).getTime();
+      var must = []
+      var extent = map.map.getBounds();
+      var hasGeoFilter = false;
+      if(map.map.esFilters){
+      for(var i in map.map.esFilters)
+      {
+          if(map.map.esFilters[i].geo_bounding_box){
+            hasGeoFilter=true;
+            break;
+          }
+      }
+      }
+      //OBS!  Use full extent for all searches, unless a geo filter is specified
+
+      if (extent && !hasGeoFilter) {
+          var bbox = {
+            "geo_bounding_box": {
+              "geocoordinates": {
+                "top_left": {
+                  "lat": 90,
+                  "lon": -180
+                },
+                "bottom_right": {
+                  "lat": -90,
+                  "lon": 180
+                }
+              }
+            }
+          }
+          must.push(bbox);
+        
+        /*
+        if (extent._northEast.lat === extent._southWest.lat && map.lastExtent) {
+          must.push(map.lastExtent)
+        }
+        else {
+          var bbox = {
+            "geo_bounding_box": {
+              "geocoordinates": {
+                "top_left": {
+                  "lat": map._fitCoordsY(extent._northEast.lat),
+                  "lon": map._fitCoordsX(extent._southWest.lng)
+                },
+                "bottom_right": {
+                  "lat": map._fitCoordsY(extent._southWest.lat),
+                  "lon": map._fitCoordsX(extent._northEast.lng)
+                }
+              }
+            }
+          }
+          must.push(bbox);
+          map.lastExtent = bbox;
+        }
+        */
+      }
+
+
+      if (to && from) {
+        var range = {
+          "range": {
+            "location_timestamp": {
+              "gte": from,
+              "lte": to,
+              "format": "epoch_millis"
+            }
+          }
+        }
+        must.push(range);
+      }
+      if (map.esFilters) {
+        for (var i = 0; i < map.esFilters.length; i++) {
+          if (map.esFilters[i].query) {
+            //query.query.filtered.filter.bool.must.push(map.esFilters[i].query)
+            must.push(map.esFilters[i].query)
+          }
+        }
+      }
+      //feature.properties.geohash
+      var query = {
+        "size": 0,
+        "query":
+        {
+          "filtered":
+          {
+            "query": {
+              "exists": { "field": "geocoordinates" }
+            },
+            "filter":
+            {
+              "bool":
+              {
+                "must": must
+              }
+            }
+          }
+        },
+        "aggs": {
+          "map_zoom": {
+            "geo_bounds": {
+              "field": "geocoordinates"
+            }
+          }
+        }
+      };
+      var url = "/elasticsearch/locations/_search?timeout=0&ignore_unavailable=true";
+
+      $.ajax({
+        method: "POST",
+        url: url,
+        crossDomain: true,
+        async: false,
+        data: JSON.stringify(query),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        dataType: 'json',
+        contentType: 'application/json',
+      })
+        .done(function (data) {
+          //set current map extent
+          try {
+            map.map.fitBounds(
+              L.latLngBounds([
+                [
+                  data.aggregations.map_zoom.bounds.top_left.lat,
+                  data.aggregations.map_zoom.bounds.top_left.lon
+                ],
+                [
+                  data.aggregations.map_zoom.bounds.bottom_right.lat,
+                  data.aggregations.map_zoom.bounds.bottom_right.lon
+                ]
+              ])
+            )
+          } catch (e) {
+          }
+        })
+        .fail(function (data) {
+          console.log(data);
+        })
+        .always(function () {
+          $rootScope.$broadcast('timesliderSelect', data);
+        });
+      //do stuff
+    })
+
     /*
     $scope.findNearby=function(lat,lng){
 alert("ok")
@@ -176,9 +332,9 @@ alert("ok")
       var minWidth = 500
       var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
       var latLng = map.map.getCenter();
-      if(opt.coords)latLng = L.latLng(opt.coords[0],opt.coords[1]);
+      if (opt.coords) latLng = L.latLng(opt.coords[0], opt.coords[1]);
       //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
-      var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>"+opt.loading+"</h4></td></tr></tbody></table>";
+      var content = "<table><tbody><tr><td><div class='loader'></div></td><td><h4>" + opt.loading + "</h4></td></tr></tbody></table>";
 
       var layerPopup = L.popup(options)
         .setLatLng(latLng)
@@ -262,76 +418,76 @@ alert("ok")
     });
 
 
-/*
-    $scope.$on('showPopup1', function (event, opt) {
-      // access opt.a, opt.b
-      var oldCursor = map.map.getContainer().style.cursor;
-      if (oldCursor === undefined) {
-        oldCursor = 'default';
-      }
-      map.map.getContainer().style.cursor = 'progress'
-      map.map.getContainer().style.cursor = oldCursor
-      var content = "<h4>" + opt.title + "</h4><table width='100%'>"
-      var fields = opt.fields;["name", "types"];//,"vicinity"
-
-
-      for (var i in fields) {
-        content += "<th>" + fields[i].alias + "</th>";
-        //types" : [ "restaurant", "food", "establishment" ],         "vicinity"
-      }
-      //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
-
-      for (var hit in opt.data) {
-        //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
-        content += "<tr>";
-        for (var i in fields) {
-          var str;
-          if (fields[i].name instanceof Array) {
-            str = opt.data[hit];//[fields[i]]
-            for (var j in fields[i].name) {
-              str = str[fields[i].name[j]]
-              //var str = opt.data[hit][fields[i].name[0]][fields[i].name[1]];
-            }
-          } else {
-            str = opt.data[hit][fields[i].name];
+    /*
+        $scope.$on('showPopup1', function (event, opt) {
+          // access opt.a, opt.b
+          var oldCursor = map.map.getContainer().style.cursor;
+          if (oldCursor === undefined) {
+            oldCursor = 'default';
           }
-
-          if (str instanceof Array) str = str.join(", ");
-          content += "<td>" + str + "</td>";
-          if (hit >= 19) break;
-        }
-        content += "</tr>";
-        //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
-      }
-      content += "</table>"
-      var minWidth = 500
-      var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
-      //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
-      var latLng = map.map.getCenter();
-      var point = map.map.latLngToContainerPoint(latLng);
-      var mapSize = map.map.getSize();
-      var calcHeight = (opt.data.length * 25) + 50;
-      var buffer = 10;
-      //if box overlaps right side
-      if (point.x > mapSize.x - (minWidth / 2) - buffer) {
-        point.x = mapSize.x - (minWidth / 2) - buffer;
-      }
-      //if box overlaps left side
-      if (point.x < (minWidth / 2)) {
-        //add extra to move past map buttons (zoom in/out, etc)
-        point.x = (minWidth / 2) + (buffer + 40);
-      }
-      //if box overlaps top
-      if (point.y < calcHeight) {
-        point.y = calcHeight + buffer;
-      }
-      latLng = map.map.containerPointToLatLng(point);
-      layerPopup = L.popup(options)
-        .setLatLng(latLng)
-        .setContent(content)
-        .openOn(map.map);
-    });
-*/
+          map.map.getContainer().style.cursor = 'progress'
+          map.map.getContainer().style.cursor = oldCursor
+          var content = "<h4>" + opt.title + "</h4><table width='100%'>"
+          var fields = opt.fields;["name", "types"];//,"vicinity"
+    
+    
+          for (var i in fields) {
+            content += "<th>" + fields[i].alias + "</th>";
+            //types" : [ "restaurant", "food", "establishment" ],         "vicinity"
+          }
+          //<th>AS1</th><th>IP Src</th><th>IP Dest</th>";
+    
+          for (var hit in opt.data) {
+            //content += "<tr><td><a href='#'>Edit</a></td><td title='" + data.hits.hits[hit]._id + "'>" + hit + "</td><td>" + data.hits.hits[hit]._index + "</td>";
+            content += "<tr>";
+            for (var i in fields) {
+              var str;
+              if (fields[i].name instanceof Array) {
+                str = opt.data[hit];//[fields[i]]
+                for (var j in fields[i].name) {
+                  str = str[fields[i].name[j]]
+                  //var str = opt.data[hit][fields[i].name[0]][fields[i].name[1]];
+                }
+              } else {
+                str = opt.data[hit][fields[i].name];
+              }
+    
+              if (str instanceof Array) str = str.join(", ");
+              content += "<td>" + str + "</td>";
+              if (hit >= 19) break;
+            }
+            content += "</tr>";
+            //<td>" + data.hits.hits[hit]._source.as1+ "</td><td>" + data.hits.hits[hit]._source.ipSrc + "</td><td>" + data.hits.hits[hit]._source.ipDst + "</td></tr>"
+          }
+          content += "</table>"
+          var minWidth = 500
+          var options = { "maxWidth": 800, "minWidth": minWidth, offset: new L.Point(0, 0) }
+          //, "closeOnClick": true, "closeButton": true, "autoPan": false, "autoClose": true
+          var latLng = map.map.getCenter();
+          var point = map.map.latLngToContainerPoint(latLng);
+          var mapSize = map.map.getSize();
+          var calcHeight = (opt.data.length * 25) + 50;
+          var buffer = 10;
+          //if box overlaps right side
+          if (point.x > mapSize.x - (minWidth / 2) - buffer) {
+            point.x = mapSize.x - (minWidth / 2) - buffer;
+          }
+          //if box overlaps left side
+          if (point.x < (minWidth / 2)) {
+            //add extra to move past map buttons (zoom in/out, etc)
+            point.x = (minWidth / 2) + (buffer + 40);
+          }
+          //if box overlaps top
+          if (point.y < calcHeight) {
+            point.y = calcHeight + buffer;
+          }
+          latLng = map.map.containerPointToLatLng(point);
+          layerPopup = L.popup(options)
+            .setLatLng(latLng)
+            .setContent(content)
+            .openOn(map.map);
+        });
+    */
     $scope.$watch('esResponse', function (resp) {
       if (resp) {
         /*
@@ -353,7 +509,14 @@ alert("ok")
 
 
         const chartData = buildChartData(resp);
-        if (!chartData) return;
+        if (!chartData) {
+          if (map._markers) {
+            visible = map._markers.isVisible();
+            map._markers.destroy();
+          }
+
+          return;
+        }
         const geoMinMax = getGeoExtents(chartData);
         chartData.geoJson.properties.allmin = geoMinMax.min;
         chartData.geoJson.properties.allmax = geoMinMax.max;
@@ -379,17 +542,19 @@ alert("ok")
           initPOILayer(layerParams);
         });
 
-        if (map.zoomToFeatures) {
-          //need to disable map events temporarily
-          //if(pointCount!=map._markers.length)
-          //map._disableEvents();
-          map._skipZoomend = true;
-          map._skipMoveend = true;
-
-          map._fitBounds();
-          //map._enableEvents();
-          //pointCount=map._markers.length;
-        }
+        //if (map.zoomToFeatures) {
+        //need to disable map events temporarily
+        //if(pointCount!=map._markers.length)
+        //map._disableEvents();
+        //  map._skipZoomend = true;
+        //  map._skipMoveend = true;
+        //var bounds = map._getDataRectangles();
+        //map.map.panTo(bounds.getCenter());
+        //map.map.panInsideBounds(bounds.getCenter());
+        //  map._fitBounds();
+        //map._enableEvents();
+        //pointCount=map._markers.length;
+        //}
 
       }
     });

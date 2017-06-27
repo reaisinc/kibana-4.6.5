@@ -536,12 +536,12 @@ document.getElementById('map').style.cursor='grab';
         var bounds = _.get(e, 'bounds')
         //need to remove all the geo filters
         var isVisible=false;
-        if (this._filters) {
-          if (this.map.hasLayer(this._filters)) {
+        if (self._filters) {
+          if (self.map.hasLayer(self._filters)) {
             isVisible = true;
           }
-          this._layerControl.removeLayer(this._filters);
-          this.map.removeLayer(this._filters);
+          self._layerControl.removeLayer(self._filters);
+          self.map.removeLayer(self._filters);
         }
         self._callbacks.rectangle({
           e: e,

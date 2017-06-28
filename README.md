@@ -13,7 +13,8 @@ https://github.com/elastic/kibana/tree/4.6
 Install sense plugin
 bin/kibana plugin --install elastic/sense
 
-Note:  kibana often doesn't rebuild after updating from git, so you may need to delete the "bundles" directory inside the optimize directory, and then start up kibana which will force a rebuild.
+Note:  kibana often doesn't rebuild/optimize after updating from git, so you may need to delete the "bundles" directory inside the optimize directory, and then start up kibana which will force a rebuild.  Or maybe just delete optimize/bundles/kibana.bundle.js.  Kibana needs an option to force a re-optimize when files are changed.  See https://github.com/elastic/kibana/issues/6057
+
  ```bash
 stop Kibana
 rm -Rf optimize/bundles

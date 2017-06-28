@@ -325,6 +325,9 @@ alert("ok")
       if (oldBodyCursor === undefined) {
         oldBodyCursor = 'default';
       }
+      //scroll window to top if table is display under map
+      window.scrollTo(0,0);
+
 
       map.map.getContainer().style.cursor = 'progress'
       document.body.style.cursor = 'progress';
